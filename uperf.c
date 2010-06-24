@@ -8,105 +8,119 @@
 #endif
 
 
-struct uperf_s uperf;
-
-
-
-static inline uint64_t
-get_timer()
+inline uint64_t
+get_timer(struct uperf_s * uperf)
 {
-    uint32_t a, d;
-    asm volatile (
-		"RDTSC" 
-		: "=a" (a), "=d" (d));
-    return ((uint64_t)a) | (((uint64_t)d) << 32);
+	return pcounter_get(&(uperf->cnt));
 }
 
-static inline uint64_t
-get_count()
+inline uint64_t
+get_count(struct uperf_s * uperf)
 {
-	uint64_t timer = get_timer();
-	uint64_t delta = timer - uperf.last_count; 
-	uperf.last_count = timer;
+	uint64_t timer = get_timer(uperf);
+	uint64_t delta = timer - uperf->last_count; 
+	uperf->last_count = timer;
 
 	return delta;
 }
 
 int
-addr2pnum(void * addr)
+uperf_init(struct uperf_s * uperf, int counter_type)
 {
-	return (int)(((uint64_t)addr - (uint64_t)(void *)(&(uperf.points)))) / sizeof(perfpoint_t);
-}
+	struct perfpoint_edge_s *edge;
 
-void
-uperf_init()
-{
-	// HACK: entry point - any address not in uperf.points[] will do here
-	uperf.last_point = (perfpoint_edge_t *)&(uperf.last_point);
-	uperf.last_count = get_timer();
+	if( pcounter_init(&(uperf->cnt), counter_type) != 0 )
+		return uperf->cnt.state;
 
-	perfpoint_edge_t *edge;
-
+	edge = uperf->points;
 	for( int i = 0; i < PERFPOINT_EDGES_MAX; i++) {
-
-		edge = (perfpoint_edge_t *)(uperf.points[i]);
-		for( int j = 0; j < PERFPOINT_EDGES_MAX; j++) {
-			edge->pred = NULL;
-			edge->count = 0;
-			edge->user_sum = 0;
-			edge->system_sum = 0;
-
-			edge++;
-		}
-	}
-}
-
-void
-uperf_print()
-{
-	perfpoint_edge_t *edge;
-
-	for( int i = 0; i < PERFPOINT_EDGES_MAX; i++) {
-		edge = (perfpoint_edge_t *)(uperf.points[i]);
-		for( int j = 0; j < PERFPOINT_EDGES_MAX; j++) {
-			if( edge->pred == NULL )
-				break;
-
-			printf("%3d => %2d: %dx, %ld avg cycles\n", addr2pnum(edge->pred), i, edge->count, edge->user_sum / edge->count);
-
-			edge++;
-		}
-	}
-}
-
-void
-perfpoint(perfpoint_t *point)
-{
-	perfpoint_edge_t *edge = (perfpoint_edge_t *)point;
-
-	int i;
-	int new = 0;
-
-	for( i = 0; i < PERFPOINT_EDGES_MAX; i++) {
-
-		if (edge->pred == NULL) {
-			// new edge
-			edge->pred = uperf.last_point;		
-			new = 1;
-		}
-
-		if (edge->pred == uperf.last_point || new) {
-			// found the edge
-			edge->count += 1;
-			edge->user_sum += get_count(); 
-
-			// read the counter here
-
-			break;
-		}
+		edge->user_count = 0;
+		edge->user_sum = 0;
+		edge->system_count = 0;
+		edge->system_sum = 0;
 
 		edge++;
 	}
 
-	uperf.last_point = (perfpoint_edge_t *)point;
+	pcounter_enable(&(uperf->cnt));
+
+	// NOTE: 0 is used for entry point
+	uperf->last_point = 0;
+	uperf->last_count = get_timer(uperf);
+	uperf->counter_type = counter_type;
+
+	return uperf->cnt.state;
+}
+
+const char UPERF_DOT_HEAD[] = "digraph \"uperf\" {\n"
+"	rankdir=UD\n"
+"	size = \"6,6\"\n"
+"	node [ fontname = \"Helvetica\" ];\n";
+
+const char UPERF_DOT_TAIL[] = "}\n";
+
+
+void
+uperf_print(struct uperf_s * uperf, FILE *stream, int format)
+{
+	uint64_t uavg, savg;
+	struct perfpoint_edge_s *edge;
+
+	edge = uperf->points;
+
+	if( format == UPERF_PRINT_DOT ) {
+		fprintf(stream, UPERF_DOT_HEAD);
+	}
+
+	for( int i = 0; i < PERFPOINTS_MAX; i++) {
+		for( int j = 0; j < PERFPOINTS_MAX; j++) {
+
+			if( edge->user_count > 0 ) {
+
+				uavg = edge->user_sum / edge->user_count;
+
+				if( edge->system_count > 0 )
+					savg = edge->system_sum / edge->system_count;
+				else
+					savg = 0;
+
+				if( format == UPERF_PRINT_DOT ) {
+					fprintf(stream,  "	\"%d\" -> \"%d\" [ label = \"%ld (x%d = %ld)\" ];\n",
+							j, i, uavg, edge->user_count, edge->user_sum);
+				}
+				else {
+					fprintf(stream, "%3i => %2d: %8dx usr: %8ld avg, %12ld sum | %6dx sys: %10ld avg\n",
+							j, i, edge->user_count, uavg, edge->user_sum, edge->system_count, savg);
+				}
+			}
+
+			edge++;
+		}
+	}
+
+	if( format == UPERF_PRINT_DOT ) {
+		fprintf(stream, UPERF_DOT_TAIL);
+	}
+}
+
+void
+perfpoint(struct uperf_s * uperf, int index)
+{
+	struct perfpoint_edge_s *edge;
+   
+	edge = uperf->points + (index * PERFPOINTS_MAX) + uperf->last_point;
+
+	uint64_t cnt = get_count(uperf);
+
+	// TODO: insert awesome system time detection here
+	edge->user_count += 1;
+	edge->user_sum += cnt;
+
+	uperf->last_point = index;
+}
+
+void
+uperf_close(struct uperf_s * uperf)
+{
+	pcounter_close(&(uperf->cnt));
 }

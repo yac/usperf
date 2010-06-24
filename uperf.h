@@ -1,37 +1,44 @@
 #ifndef _UPERF_H
 #define _UPERF_H
 
+#include <stdio.h>
 #include <stdint.h>
 
-#define PERFPOINTS_MAX 32
-#define PERFPOINT_EDGES_MAX 8
+#include "perf.h"
+
+
+#define PERFPOINTS_MAX 128
+#define PERFPOINT_EDGES_MAX (PERFPOINTS_MAX * PERFPOINTS_MAX)
+#define SYSTEM_RATIO 10
 
 #define PERFPOINT(x) perfpoint(uperf.points + x)
 
+enum uperf_print_formats {
+	UPERF_PRINT_DEFAULT = 0,
+	UPERF_PRINT_DOT,
+};
 
-
-typedef struct perfpoint_edge_s {
-	struct perfpoint_edge_s *pred;
-	uint32_t count;
+struct perfpoint_edge_s {
+	uint32_t user_count;
 	uint64_t user_sum;
+	uint32_t system_count;
 	uint64_t system_sum;
-}
-perfpoint_edge_t;
-
-typedef perfpoint_edge_t perfpoint_t[PERFPOINT_EDGES_MAX];
+};
 
 struct uperf_s {
 	long int last_count;
-	perfpoint_edge_t *last_point;
-	perfpoint_t points[PERFPOINTS_MAX];
+	int last_point;
+	struct perfpoint_edge_s points[PERFPOINT_EDGES_MAX];
+
+	struct pcounter cnt;
+	int counter_type;
 };
 
-struct uperf_s uperf;
-
-
 ///// FUNCTION DECLARATIONS /////
-void uperf_init();
-void uperf_print();
-void perfpoint(perfpoint_t *point);
+
+void perfpoint(struct uperf_s * uperf, int index);
+int uperf_init(struct uperf_s * uperf, int counter_type);
+void uperf_print(struct uperf_s * uperf, FILE *stream, int format);
+void uperf_close(struct uperf_s * uperf);
 
 #endif
