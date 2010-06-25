@@ -22,6 +22,11 @@ $(LIB): uperf.o perf.o
 
 test: test.c
 	$(CC) -luperf $(CFLAGS) test.c -o test
+
+test-rdpmc: test-rdpmc.c
+	$(CC) $(CFLAGS) test-rdpmc.c -o test-rdpmc
+
+tests: test test-rdpmc
 	
 run: install test
 	./test
@@ -30,5 +35,5 @@ install: $(LIB)
 	install $(LIB) /usr/lib64/
 
 clean:
-	rm -f $(LIB) *.o test
+	rm -f $(LIB) *.o test test-rdpmc
 
