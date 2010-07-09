@@ -1,6 +1,7 @@
 #include "uperf.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
 
 #if !(defined(__i386) || defined(__ia64) || defined(__amd64) )
@@ -59,18 +60,52 @@ const char UPERF_DOT_HEAD[] = "digraph \"uperf\" {\n"
 
 const char UPERF_DOT_TAIL[] = "}\n";
 
+const char UPERF_PRINT_MALLOC_FAILED[] = "Memory allocation required for printing failed. What the...";
+
+#define UPERF_DOT_MAX_PENWIDTH 20
+
 
 void
 uperf_print(struct uperf_s * uperf, FILE *stream, int format)
 {
-	uint64_t uavg, savg;
 	struct perfpoint_edge_s *edge;
-
-	edge = uperf->points;
+	uint64_t uavg, savg;
+	uint64_t avg_max = 0, avg_min = INT64_MAX;
+	uint32_t cnt_max = 0;
+	uint32_t peniswidth, color;
 
 	if( format == UPERF_PRINT_DOT ) {
 		fprintf(stream, UPERF_DOT_HEAD);
+
+		// We need maxima to print something meaningful.
+		edge = uperf->points;
+		for( int i = 0; i < PERFPOINTS_MAX; i++) {
+			for( int j = 0; j < PERFPOINTS_MAX; j++) {
+				if( edge->user_count > 0 ) {
+					uavg = edge->user_sum / edge->user_count;
+
+					if( uavg > avg_max) 
+						avg_max = uavg;
+
+					if( uavg < avg_min) 
+						avg_min = uavg;
+
+					if( edge->user_count > cnt_max) 
+						cnt_max = edge->user_count;
+				}
+
+				edge++;
+			}
+		}
+
+		// with small cnt_max, line'd be ridiculously large for small counts
+		if( cnt_max < UPERF_DOT_MAX_PENWIDTH )
+			cnt_max = UPERF_DOT_MAX_PENWIDTH;
+
+		avg_max += 1;
 	}
+
+	edge = uperf->points;
 
 	for( int i = 0; i < PERFPOINTS_MAX; i++) {
 		for( int j = 0; j < PERFPOINTS_MAX; j++) {
@@ -84,9 +119,16 @@ uperf_print(struct uperf_s * uperf, FILE *stream, int format)
 				else
 					savg = 0;
 
+
 				if( format == UPERF_PRINT_DOT ) {
-					fprintf(stream,  "	\"%d\" -> \"%d\" [ label = \"%ld (x%d = %ld)\" ];\n",
-							j, i, uavg, edge->user_count, edge->user_sum);
+					// pen width depends on number of transitions
+					peniswidth = (int)((float)(edge->user_count) / (float)(cnt_max) * UPERF_DOT_MAX_PENWIDTH) + 1;
+					color = (int)(((float)(uavg - avg_min) / (float)(avg_max - avg_min)) * 254) + 1;
+
+					fprintf(stream, "	\"%d\" -> \"%d\" [ label = \"%ld (x%d = %ld)\", penwidth = %d, color=\"#%02X0000\" ];\n",
+							j, i, uavg, edge->user_count, edge->user_sum,
+							peniswidth, color
+							);
 				}
 				else {
 					fprintf(stream, "%3i => %2d: %8dx usr: %8ld avg, %12ld sum | %6dx sys: %10ld avg\n",
