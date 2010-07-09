@@ -8,6 +8,8 @@
 #error "Not a right architecture."
 #endif
 
+// global evil for single-thread macros
+struct uperf_s uperf_global;
 
 inline uint64_t
 get_timer(struct uperf_s * uperf)
@@ -26,12 +28,16 @@ get_count(struct uperf_s * uperf)
 }
 
 int
-uperf_init(struct uperf_s * uperf, int counter_type)
+uperf_init(struct uperf_s * uperf, int perfpoints_max, int counter_type)
 {
 	struct perfpoint_edge_s *edge;
 
 	if( pcounter_init(&(uperf->cnt), counter_type) != 0 )
 		return uperf->cnt.state;
+
+	uperf->perfpoints_max = perfpoints_max;
+	uperf->edges_max = perfpoints_max * perfpoints_max;
+	uperf->points = malloc(sizeof(struct perfpoint_edge_s) * uperf->edges_max);
 
 	edge = uperf->points;
 	for( int i = 0; i < PERFPOINT_EDGES_MAX; i++) {
@@ -46,9 +52,9 @@ uperf_init(struct uperf_s * uperf, int counter_type)
 	pcounter_enable(&(uperf->cnt));
 
 	// NOTE: 0 is used for entry point
+	uperf->counter_type = counter_type;
 	uperf->last_point = 0;
 	uperf->last_count = get_timer(uperf);
-	uperf->counter_type = counter_type;
 
 	return uperf->cnt.state;
 }
@@ -164,5 +170,6 @@ perfpoint(struct uperf_s * uperf, int index)
 void
 uperf_close(struct uperf_s * uperf)
 {
+	free(uperf->points);
 	pcounter_close(&(uperf->cnt));
 }

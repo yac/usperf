@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -DDEBUG -Wall -g -Wextra -pedantic --std=gnu99
+CFLAGS = -DDEBUG -DUPERF -Wall -g -Wextra -pedantic --std=gnu99
 LIB = libuperf.so
 
 VER = 0.1
@@ -28,13 +28,16 @@ test-lib: $(LIB) test.c
 test-nolib: test.c perf.o uperf.o
 	$(CC) $(CFLAGS) perf.o uperf.o test.c -o $@
 
+test-single: test-single.c
+	$(CC) -luperf $(CFLAGS) test-single.c -o $@
+
 test-mini: test-mini.c perf.o
 	$(CC) $(CFLAGS) perf.o test-mini.c -o $@
 
 test-rdpmc: test-rdpmc.c
 	$(CC) $(CFLAGS) test-rdpmc.c -o $@
 
-tests: test-lib test-rdpmc test-mini test-nolib
+tests: test-lib test-rdpmc test-single test-mini test-nolib
 	
 run: install test-lib
 	./test-lib
@@ -43,5 +46,5 @@ install: $(LIB)
 	install $(LIB) /usr/lib64/
 
 clean:
-	rm -f $(LIB) *.o test-lib test-nolib test-rdpmc test-mini
+	rm -f $(LIB) *.o test-lib test-nolib test-single test-rdpmc test-mini
 
