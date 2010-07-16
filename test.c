@@ -7,12 +7,30 @@ int save_uperf_log(struct uperf_s *uperf, const char *path) {
 	if (log == NULL)
 		return 0;
 
-	UPERF_PRINT(uperf, log, UPERF_PRINT_DEFAULT);
+	UPERF_PRINT(uperf, log, UPERF_PRINT_DEFAULT, NULL);
 
 	fclose(log);
 
 	return 1;
 }
+
+const char * my_point_name(int point) {
+	static char num[8];
+	switch (point) {
+		case 0:
+			return "START";
+		case 1:
+			return "prvni";
+		case 2:
+			return "druhy";
+		case 3:
+			return "treti";
+		default:
+			sprintf(num, "[%d]", point);
+			return num;
+	}
+}
+/*const char points[128][255];*/
 
 int
 /*main(int argc, char *argv[])*/
@@ -39,13 +57,13 @@ main()
 	PERFPOINT(&uperf, 10);
 
 	/*save_uperf_log(&uperf, "test.log");*/
-	UPERF_PRINT(&uperf, stdout, UPERF_PRINT_DEFAULT);
+	UPERF_PRINT(&uperf, stdout, UPERF_PRINT_DEFAULT, my_point_name);
 
 #ifdef UPERF
 	FILE *log = fopen("uperf.dot", "w");
 
 	if (log != NULL) {
-		UPERF_PRINT(&uperf, log, UPERF_PRINT_DOT);
+		UPERF_PRINT(&uperf, log, UPERF_PRINT_DOT, my_point_name);
 
 		fclose(log);
 	}

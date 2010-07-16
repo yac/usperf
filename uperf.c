@@ -70,15 +70,15 @@ const char UPERF_PRINT_MALLOC_FAILED[] = "Memory allocation required for printin
 
 #define UPERF_DOT_MAX_PENWIDTH 20
 
-
 void
-uperf_print(struct uperf_s * uperf, FILE *stream, int format)
+uperf_print(struct uperf_s * uperf, FILE *stream, int format, const char * (*point_name_fnc)(int))
 {
 	struct perfpoint_edge_s *edge;
 	uint64_t uavg, savg;
 	uint64_t avg_max = 0, avg_min = INT64_MAX;
 	uint32_t cnt_max = 0;
 	uint32_t peniswidth, color;
+	const char *name_str;
 
 	if( format == UPERF_PRINT_DOT ) {
 		fprintf(stream, UPERF_DOT_HEAD);
@@ -125,20 +125,30 @@ uperf_print(struct uperf_s * uperf, FILE *stream, int format)
 				else
 					savg = 0;
 
-
 				if( format == UPERF_PRINT_DOT ) {
 					// pen width depends on number of transitions
 					peniswidth = (int)((float)(edge->user_count) / (float)(cnt_max) * UPERF_DOT_MAX_PENWIDTH) + 1;
 					color = (int)(((float)(uavg - avg_min) / (float)(avg_max - avg_min)) * 254) + 1;
+					if (point_name_fnc == NULL) {
+						fprintf(stream, "	\"%d\" -> \"%d\"", j, i);
+					}
+					else {
+						fprintf(stream, "	\"%s\" -> \"%s\"", point_name_fnc(j), point_name_fnc(i));
+					}
 
-					fprintf(stream, "	\"%d\" -> \"%d\" [ label = \"%ld (x%d = %ld)\", penwidth = %d, color=\"#%02X0000\" ];\n",
-							j, i, uavg, edge->user_count, edge->user_sum,
-							peniswidth, color
+					fprintf(stream, "[ label = \"%ld (x%d = %ld)\", penwidth = %d, color=\"#%02X0000\" ];\n",
+							uavg, edge->user_count, edge->user_sum, peniswidth, color
 							);
 				}
 				else {
-					fprintf(stream, "%3i => %2d: %8dx usr: %8ld avg, %12ld sum | %6dx sys: %10ld avg\n",
-							j, i, edge->user_count, uavg, edge->user_sum, edge->system_count, savg);
+					if (point_name_fnc == NULL) {
+						fprintf(stream, "%3d => %3d: ", j, i); 
+					}
+					else {
+						fprintf(stream, "%10s => %-10s: ", point_name_fnc(j), point_name_fnc(i)); 
+					}
+					fprintf(stream, "%8dx usr: %8ld avg, %12ld sum | %6dx sys: %10ld avg\n",
+							edge->user_count, uavg, edge->user_sum, edge->system_count, savg);
 				}
 			}
 

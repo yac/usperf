@@ -39,7 +39,7 @@ struct uperf_s {
 
 void perfpoint(struct uperf_s * uperf, int index);
 int uperf_init(struct uperf_s * uperf, int perfpoints_max, int counter_type);
-void uperf_print(struct uperf_s * uperf, FILE *stream, int format);
+void uperf_print(struct uperf_s * uperf, FILE *stream, int format, const char * (*point_name_fnc)(int));
 void uperf_close(struct uperf_s * uperf);
 
 ///// MACRO WRAPPERS (depending on UPERF) /////
@@ -51,24 +51,24 @@ extern struct uperf_s uperf_global;
 
 #define PERFPOINT(uperf, index)                          perfpoint(uperf, index)
 #define UPERF_INIT(uperf, perfpoints_max, counter_type)  uperf_init(uperf, perfpoints_max, counter_type)
-#define UPERF_PRINT(uperf, stream, format)               uperf_print(uperf, stream, format)
+#define UPERF_PRINT(uperf, stream, format, point_names)  uperf_print(uperf, stream, format, point_names)
 #define UPERF_CLOSE(uperf)                               uperf_close(uperf)
 
 #define PERFPOINT_S(index)                               perfpoint(&uperf_global, index)
 #define UPERF_INIT_S(perfpoints_max, counter_type)       uperf_init(&uperf_global, perfpoints_max, counter_type)
-#define UPERF_PRINT_S(stream, format)                    uperf_print(&uperf_global, stream, format)
+#define UPERF_PRINT_S(stream, format, point_names)       uperf_print(&uperf_global, stream, format, point_names)
 #define UPERF_CLOSE_S                                    uperf_close(&uperf_global)
 
 #else
 
 #define PERFPOINT(uperf, index)
 #define UPERF_INIT(uperf, perfpoints_max, counter_type)  0
-#define UPERF_PRINT(uperf, stream, format)
+#define UPERF_PRINT(uperf, stream, format, point_names)
 #define UPERF_CLOSE(uperf)
 
 #define PERFPOINT_S(index)
 #define UPERF_INIT_S(perfpoints_max, counter_type)       0
-#define UPERF_PRINT_S(stream, format)
+#define UPERF_PRINT_S(stream, format, point_names)
 #define UPERF_CLOSE_S
 
 #endif

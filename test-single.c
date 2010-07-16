@@ -25,13 +25,13 @@ main()
 	PERFPOINT_S(10);
 
 	/*save_uperf_log(&uperf, "test.log");*/
-	UPERF_PRINT_S(stdout, UPERF_PRINT_DEFAULT);
+	UPERF_PRINT_S(stdout, UPERF_PRINT_DEFAULT, NULL);
 
 #ifdef UPERF
 	FILE *log = fopen("uperf.dot", "w");
 
 	if (log != NULL) {
-		UPERF_PRINT_S(log, UPERF_PRINT_DOT);
+		UPERF_PRINT_S(log, UPERF_PRINT_DOT, NULL);
 
 		fclose(log);
 	}
