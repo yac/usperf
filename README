@@ -1,0 +1,94 @@
+    
+              ___            ____
+      __  __/ __ \___  _____/ __/
+     / / / / /_/ / _ \/ ___/ /_    userspace
+    / /_/ / ____/  __/ /  / __/   performance
+    \__,_/_/    \___/_/  /_/     counters
+
+
+WHAT THE...
+	uperf is an attempt to make it possible to read the hardware performance
+	counters used by the perf events linux subsystem from userspace using RDPMC
+	instruction avoiding system calls which are too expensive for certain
+	tasks like real time performance monitoring.
+
+
+STATUS
+	Sadly, after many years RDPMC is still only enabled in ring 0 in linux
+	kernel (as of 2.6.35) and kernel has to be patched (CR4.PCE flag has to be
+	set to 1).
+
+	uperf userspace library is in alpha stage and ready for testing. 
+
+
+HOW IT WORKS
+	- create hardware perf event (counter) through system call 
+	- mmap the perf event (file descriptor) to get info about the event
+	- continually read the HW counter associated with perf event from
+	  userspace using RDPMC
+
+
+THE PROBLEM
+	Context/CPU switches are not yet compensated! This is the main problem
+	that is being worked on.
+
+
+PREREQUISITIES/INSTALLATION
+	You need a machine with PMC, which are present on most of new intel/AMD
+	(and even powerPC) CPUs. Then you need a linux kernel with perf events
+	subsystem (>= 2.6.32) and RDPMC enabled. The patch in ./kernel/ is
+	required for that on intel x86{_64}.  Efforts to push into mainline are
+	underway.
+
+	Even though you can copy and use [u]perf.[ch], using library is
+	recommended.  Until RPM is available, run `make` and copy libuperf.so to
+	library dir. 
+
+
+USAGE
+	UPERF_* macros are just macros wrapped around uperf_* functions with the
+	same parameters that are only enabled when UPERF symbol is defined.
+	Additionaly UPERF_*_S macros allow you to ommit passing struct uperf_s as
+	the 1st argument and instead use predefined one. This is, as you certainly
+	guessed, not a good idea with more than one thread. Basically, your
+	measured code will look like this:
+
+	struct uperf_s uperf;
+	UPERF_INIT(&uperf, N_POINTS, COUNTER_TYPE);
+	...
+	PERFPOINT(&uperf, 1);
+	...
+	PERFPOINT(&uperf, 2);
+	...
+	...
+	...
+	PERFPOINT($uperf, N - 1)
+
+	UPERF_PRINT(...)
+	UPERF_CLOSE(&uperf)
+
+	Make sure libuperf.so is in place and compile with -luperf and -DUPERF.
+	Without UPERF defined, all the UPERF_* macros shall be disabled, which
+	allow you to efficiently enable and disable uperf at compile time.
+	Disabling it may cause safe-to-ignore "unused..." compiler warnings.
+
+
+PRETTY GRAPHICAL OUTPUT
+	Indeed! Use UPERF_PRINT() with UPERF_PRINT_DOT format and file stream.
+	Output will be generated in dot format. dot is a nice little directed
+	graph plotting app from graphviz package (yum install graphviz) and can
+	be:
+
+		viewed with imagemagick: dot -T png uperf.dot | display
+		          saved to file: dot -T png -o pretty_graph.png uperf.dot
+	
+	Line width is proportional to the number of runs through the edge, color
+	represents how long it took on average.
+
+SEE ALSO
+	- uperf.h
+	- test.c
+	- Makefile
+	- HTML Doxygen documentation at doc/html/index.html
+
+	

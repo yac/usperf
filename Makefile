@@ -39,6 +39,9 @@ test-rdpmc: test-rdpmc.c
 
 tests: test-lib test-rdpmc test-single test-mini test-nolib
 	
+doc:
+	doxygen
+
 run: install test-lib
 	./test-lib
 
@@ -48,3 +51,4 @@ install: $(LIB)
 clean:
 	rm -f $(LIB) *.o test-lib test-nolib test-single test-rdpmc test-mini
 
+.PHONY: doc

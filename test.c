@@ -1,19 +1,34 @@
+/** @file
+ * Basic test and example usage of uperf.
+ */
 #include <stdio.h>
-#include <linux/perf_event.h>
 #include "uperf.h"
 
-int save_uperf_log(struct uperf_s *uperf, const char *path) {
-	FILE * log = fopen(path, "w");
-	if (log == NULL)
+/**
+ * Uninteresting print-to-file helper, move along
+ */
+int save_uperf_output(const char *path, struct uperf_s * uperf, int format, const char * (*point_name_fnc)(int)) {
+	FILE *log = fopen(path, "w");
+
+	if (log != NULL) {
+		UPERF_PRINT(uperf, log, format, point_name_fnc);
+
+		fclose(log);
+	}
+	else {
+		printf("Opening .dot file failed!");
 		return 0;
-
-	UPERF_PRINT(uperf, log, UPERF_PRINT_DEFAULT, NULL);
-
-	fclose(log);
+	}
 
 	return 1;
 }
 
+/**
+ * Example function for named perfpoints.
+ *
+ * Pass function with this signature (int -> const char*) to UPERF_PRINT() to
+ * print perfpoint names instead of just numbers.
+ */
 const char * my_point_name(int point) {
 	static char num[8];
 	switch (point) {
@@ -30,16 +45,27 @@ const char * my_point_name(int point) {
 			return num;
 	}
 }
-/*const char points[128][255];*/
 
-int
-/*main(int argc, char *argv[])*/
-main()
+/**
+ * Basic uperf usage.
+ */
+int main()
 {
+	/**
+	 * struct uperf_s is used to store uperf info and is passed to UPERF_*
+	 * macros. You can also use UPERF_*_S() macros if you are not to use more 
+	 * than one structure (==no threads).
+	 */
 	struct uperf_s uperf;
 
-	// grep /usr/include/linux/perf_event.h for PERF_COUNT_HW for alternatives
-	/*int c = uperf_init(&uperf, PERF_COUNT_HW_CPU_CYCLES);*/
+	/*
+	 * Initialization.
+	 *
+	 * `grep PERF_COUNT_HW /usr/include/linux/perf_event.h` for possible
+	 * values of counter_type. The two most popular ones:
+	 * @li PERF_COUNT_HW_CPU_CYCLES
+	 * @li PERF_COUNT_HW_INSTRUCTION
+	 */
 	int c = UPERF_INIT(&uperf, 128, PERF_COUNT_HW_INSTRUCTIONS);
 
 	if( c != 0 ) {
@@ -47,6 +73,9 @@ main()
 		return c;
 	}
 
+	/*
+	 * Perfpoint with index 1. 0 is reserved for initial entry (UPERF_INIT).
+	 */
 	PERFPOINT(&uperf, 1);
 
 	for( int i=0; i < 5; i++ ) {
@@ -56,20 +85,19 @@ main()
 	PERFPOINT(&uperf, 3);
 	PERFPOINT(&uperf, 10);
 
-	/*save_uperf_log(&uperf, "test.log");*/
+
+	/*
+	 * UPERF_PRINT will print uperf statistics to given stream. See its
+	 * description for more info about formats.
+	 */
 	UPERF_PRINT(&uperf, stdout, UPERF_PRINT_DEFAULT, my_point_name);
 
+	/*
+	 * if UPERF symbol is not defined, UPERF_* macros are disabled. This may
+	 * lead to "unused ..." warning - nothing is ever perfect (in C).
+	 */
 #ifdef UPERF
-	FILE *log = fopen("uperf.dot", "w");
-
-	if (log != NULL) {
-		UPERF_PRINT(&uperf, log, UPERF_PRINT_DOT, my_point_name);
-
-		fclose(log);
-	}
-	else {
-		printf("Opening .dot file failed!");
-	}
+	save_uperf_output("test.uperf.dot", &uperf, UPERF_PRINT_DOT, my_point_name);
 #endif
 
 	UPERF_CLOSE(&uperf);

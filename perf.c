@@ -1,3 +1,6 @@
+/** @file
+ * Performance counter abstraction using perf events.
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -88,6 +91,14 @@ struct perf_event_attr default_event_attr = {
 	.task           = 0, /* trace fork/exit       */
 };
 
+/** Init performance counter.
+ *
+ * @param[in,out] cnt pcounter to init
+ * @param[in] counter_type `<tt>grep PERF_COUNT_HW /usr/include/linux/perf_event.h</tt>` for possible values. The two most popular ones:
+ * @li PERF_COUNT_HW_CPU_CYCLES - count CPU cycles
+ * @li PERF_COUNT_HW_INSTRUCTION - count instructions
+ * @return 0 on success, -1 on perf syscall error, -2 on mmap error
+ */
 int pcounter_init(struct pcounter *cnt, unsigned int counter_type)
 {
 	struct perf_event_attr event_attr;
@@ -115,6 +126,7 @@ int pcounter_init(struct pcounter *cnt, unsigned int counter_type)
 	return cnt->state = 0;
 }
 
+/// Enable the performance counter.
 void pcounter_enable(struct pcounter *cnt)
 {
 	ioctl(cnt->fd, PERF_EVENT_IOC_ENABLE);
@@ -138,6 +150,11 @@ static void mmap_write_tail(struct pcounter *cnt, uint64_t tail)
 	pc->data_tail = tail;
 }
 
+/** 
+ * Read the perf ring-buffer.
+ *
+ * Doesn't do all that much at the moment.
+ */
 static void pcounter_mmap_read(struct pcounter *cnt)
 {
 	unsigned int head = mmap_read_head(cnt);
@@ -179,7 +196,7 @@ static void pcounter_mmap_read(struct pcounter *cnt)
 	cnt->prev = old;
 }
 
-
+/// Get the performance counter value.
 uint64_t pcounter_get(struct pcounter *cnt)
 {
 	uint64_t count;
@@ -213,6 +230,7 @@ uint64_t pcounter_get(struct pcounter *cnt)
 	return count;
 }
 
+/// Close the performance counter.
 void pcounter_close(struct pcounter *cnt)
 {
 	munmap(cnt->base, (mmap_pages + 1) * page_size);

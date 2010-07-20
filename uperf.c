@@ -1,22 +1,25 @@
+/** @file
+ * uperf userspace interface.
+ */
 #include "uperf.h"
 #include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
 
 
 #if !(defined(__i386) || defined(__ia64) || defined(__amd64) )
 #error "Not a right architecture."
 #endif
 
-// global evil for single-thread macros
+/// Global evil for UPERF_*_S single-thread macros.
 struct uperf_s uperf_global;
 
+/// Get raw timer data.
 inline uint64_t
 get_timer(struct uperf_s * uperf)
 {
 	return pcounter_get(&(uperf->cnt));
 }
 
+/// Get count since last perfpoint.
 inline uint64_t
 get_count(struct uperf_s * uperf)
 {
@@ -27,6 +30,20 @@ get_count(struct uperf_s * uperf)
 	return delta;
 }
 
+/**
+ * Init uperf structure.
+ *
+ * Prepare supplied struct uperf_s - init HW perf counter and alloc perfpoints
+ * array. Note that (perfpoints_max + 1)^2 array of <tt>struct perfpoint_edge_s</tt>
+ * (24 bytes at time of writing) will be allocated.
+ *
+ * @param[in,out] uperf uperf structure to init
+ * @param[in] perfpoints_max max number of perfpoints
+ * @param[in] counter_type what to count - <tt>`grep PERF_COUNT_HW /usr/include/linux/perf_event.h`</tt> for possible values. The two most popular ones:
+ * @li PERF_COUNT_HW_CPU_CYCLES - count CPU cycles
+ * @li PERF_COUNT_HW_INSTRUCTION - count instructions
+ * @return 0 on success, see perf.c:pcounter_init() for error values
+ */
 int
 uperf_init(struct uperf_s * uperf, int perfpoints_max, int counter_type)
 {
@@ -35,7 +52,7 @@ uperf_init(struct uperf_s * uperf, int perfpoints_max, int counter_type)
 	if( pcounter_init(&(uperf->cnt), counter_type) != 0 )
 		return uperf->cnt.state;
 
-	uperf->perfpoints_max = perfpoints_max;
+	uperf->perfpoints_max = perfpoints_max + 1;
 	uperf->edges_max = perfpoints_max * perfpoints_max;
 	uperf->points = malloc(sizeof(struct perfpoint_edge_s) * uperf->edges_max);
 
@@ -63,13 +80,24 @@ const char UPERF_DOT_HEAD[] = "digraph \"uperf\" {\n"
 "	rankdir=UD\n"
 "	size = \"6,6\"\n"
 "	node [ fontname = \"Helvetica\" ];\n";
-
 const char UPERF_DOT_TAIL[] = "}\n";
-
 const char UPERF_PRINT_MALLOC_FAILED[] = "Memory allocation required for printing failed. What the...";
 
 #define UPERF_DOT_MAX_PENWIDTH 20
 
+/**
+ * Print uperf statistics to specified stream.
+ *
+ * Text and dot (graphviz) formats are supported. If point_name_fnc function
+ * is supplied, it will be used to obtain the names of perfpoints.
+ *
+ * @param[in] uperf uperf structure to print
+ * @param[out] stream stream to print output to
+ * @param[in] format print format, one of:
+ * @li UPERF_PRINT_DEFAULT - text format
+ * @li UPERF_PRINT_DOT - dot (graphviz) format (run through dot to obtain a graph)
+ * @param point_name_fnc custom function that will return the name of perfpoint. Leave NULL to use perfpoint numbers.
+ */
 void
 uperf_print(struct uperf_s * uperf, FILE *stream, int format, const char * (*point_name_fnc)(int))
 {
@@ -161,6 +189,19 @@ uperf_print(struct uperf_s * uperf, FILE *stream, int format, const char * (*poi
 	}
 }
 
+/**
+ * Insert perfpoint.
+ *
+ * Each time this function is called, timer is read and elapsed time since last
+ * perfpoint is written into the supplied uperf structure. Each perfpoint is
+ * identified by an integer ranging from 1 to perfpoints_max (specified in
+ * uperf_init). Index 0 is reserved for program entry (counter
+ * initialization). Also this is C, so if you supply too big index, expect
+ * usual SIGSEGV-and-friends fun.
+ *
+ * @param[in,out] uperf uperf structure to write info to.
+ * @param[in] index perfpoint index <1; perfpoints_max>
+ */
 void
 perfpoint(struct uperf_s * uperf, int index)
 {
@@ -177,6 +218,10 @@ perfpoint(struct uperf_s * uperf, int index)
 	uperf->last_point = index;
 }
 
+/**
+ * Clean up uperf structure.
+ * @param[in,out] uperf uperf structure to close
+ */
 void
 uperf_close(struct uperf_s * uperf)
 {

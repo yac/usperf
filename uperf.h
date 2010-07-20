@@ -1,3 +1,14 @@
+/** @file
+ * uperf userspace interface.
+ *
+ * UPERF_* macros are just wrappers around the same named uperf_* functions
+ * that are defined only when UPERF is defined (your app compiled with
+ * -DUPERF).
+ *
+ * UPERF_*_S macros use global struct uperf_s as the first argument for uperf_
+ * functions making them easier to type and unusable in multi-threaded
+ * applications.
+ */
 #ifndef _UPERF_H
 #define _UPERF_H
 

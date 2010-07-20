@@ -1,9 +1,13 @@
+/** @file
+ * Performance counter abstraction using perf events.
+ */
 #ifndef _PERF_H
 #define _PERF_H
 
 //#include "include/linux/perf_event.h"
 #include <linux/perf_event.h>
 
+/// A performance counter.
 struct pcounter {
 	int fd;
 	void *base;
