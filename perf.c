@@ -88,28 +88,6 @@ struct perf_event_attr default_event_attr = {
 	.task           = 0, /* trace fork/exit       */
 };
 
-int pcounter_test()
-{
-	int fd;
-	int r = 0;
-	void * base;
-
-	fd = sys_perf_event_open(&default_event_attr, getpid(), -1, -1, 0);
-	if( fd < 0 )
-		return -1;
-
-	page_size = sysconf(_SC_PAGE_SIZE);
-
-	// void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
-	base = mmap(NULL, (128 + 1) * page_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-	if (base == MAP_FAILED)
-		r = -2;
-
-	close(fd);
-
-	return r;
-}
-
 int pcounter_init(struct pcounter *cnt, unsigned int counter_type)
 {
 	struct perf_event_attr event_attr;
