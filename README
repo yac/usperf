@@ -44,6 +44,9 @@ PREREQUISITIES/INSTALLATION
 	recommended.  Until RPM is available, run `make` and copy libuperf.so to
 	library dir. 
 
+	To check if everything is working, compile tests `make tests` and run
+	`./tests_run.sh` to run all uperf tests on all CPUs.
+
 
 USAGE
 	UPERF_* macros are just macros wrapped around uperf_* functions with the
