@@ -41,8 +41,8 @@ PREREQUISITIES/INSTALLATION
 	underway.
 
 	Even though you can copy and use [u]perf.[ch], using library is
-	recommended.  Until RPM is available, run `make` and copy libuperf.so to
-	library dir. 
+	recommended.  Use either the libuperf RPM package or run `make` and copy
+	libuperf.so to library dir (and optionally uperf.h to include dir).  
 
 	To check if everything is working, compile tests `make tests` and run
 	`./tests_run.sh` to run all uperf tests on all CPUs.
@@ -56,6 +56,9 @@ USAGE
 	guessed, not a good idea with more than one thread. Basically, your
 	measured code will look like this:
 
+	#include <uperf.h>
+	...
+	...
 	struct uperf_s uperf;
 	UPERF_INIT(&uperf, N_POINTS, COUNTER_TYPE);
 	...

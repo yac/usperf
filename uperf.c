@@ -106,7 +106,6 @@ uperf_print(struct uperf_s * uperf, FILE *stream, int format, const char * (*poi
 	uint64_t avg_max = 0, avg_min = INT64_MAX;
 	uint32_t cnt_max = 0;
 	uint32_t peniswidth, color;
-	const char *name_str;
 
 	if( format == UPERF_PRINT_DOT ) {
 		fprintf(stream, UPERF_DOT_HEAD);

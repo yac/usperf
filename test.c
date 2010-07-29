@@ -2,7 +2,13 @@
  * Basic test and example usage of uperf.
  */
 #include <stdio.h>
+
+/*
+ * You probably want to use uperf.h from include dir:
+ * #include <uperf.h>
+ */
 #include "uperf.h"
+
 
 /**
  * Uninteresting print-to-file helper, move along
@@ -51,13 +57,15 @@ const char * my_point_name(int point) {
  */
 int main()
 {
+	int i;
+
 	/**
 	 * struct uperf_s is used to store uperf info and is passed to UPERF_*
 	 * macros. You can also use UPERF_*_S() macros if you are not to use more 
 	 * than one structure (==no threads).
 	 */
 	struct uperf_s uperf;
-
+	
 	/*
 	 * Initialization.
 	 *
@@ -78,7 +86,7 @@ int main()
 	 */
 	PERFPOINT(&uperf, 1);
 
-	for( int i=0; i < 5; i++ ) {
+	for( i=0; i < 5; i++ ) {
 		PERFPOINT(&uperf, 2);
 	}
 
@@ -98,6 +106,8 @@ int main()
 	 */
 #ifdef UPERF
 	save_uperf_output("test.uperf.dot", &uperf, UPERF_PRINT_DOT, my_point_name);
+#else
+	printf("uPerf is turned off (no -DUPERF passed to compiler?)\n");
 #endif
 
 	UPERF_CLOSE(&uperf);

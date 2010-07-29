@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "perf.h"
+#include <linux/perf_event.h>
 
 
 #define PERFPOINTS_MAX 128
@@ -25,6 +25,13 @@
 enum uperf_print_formats {
 	UPERF_PRINT_DEFAULT = 0,
 	UPERF_PRINT_DOT,
+};
+
+struct pcounter {
+	int fd;
+	void *base;
+	char state;
+	int prev;
 };
 
 struct perfpoint_edge_s {
@@ -85,11 +92,10 @@ extern struct uperf_s uperf_global;
 #endif
 
 
-
-/*
-#define PERFPOINT(uperf, index) #ifdef UPERF_ENABLE \
-	perfpoint(uperf, index) \
-#endif
-*/
+// These are likely none of your bussiness, move along.
+int pcounter_init(struct pcounter *cnt, unsigned int counter_type);
+void pcounter_enable(struct pcounter *cnt);
+uint64_t pcounter_get(struct pcounter *cnt);
+void pcounter_close(struct pcounter *cnt);
 
 #endif

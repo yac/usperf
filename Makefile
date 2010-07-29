@@ -3,13 +3,13 @@ CFLAGS = -DDEBUG -DUPERF -Wall -g -Wextra -pedantic --std=gnu99
 LIB = libuperf.so
 
 VER = 0.1
+PACKDIR = libuperf-$(VER)
+ARCHIVE = $(PACKDIR).tgz
 
-SRCS = decode.c pktdec.c packets.c pktmatch.c
-
-HDRS = common.h debug.h packets.h decode.h match_rates.h
+PACK_FILES = uperf.c uperf.h perf.c Makefile README
 
 
-all: $(LIB) test-mini
+all: $(LIB)
 
 perf.o: perf.c
 	$(CC) -fpic -finline-functions -finline-functions-called-once $(CFLAGS) -c perf.c
@@ -50,5 +50,13 @@ install: $(LIB)
 
 clean:
 	rm -f $(LIB) *.o test-lib test-nolib test-single test-rdpmc test-mini
+
+dist:
+	rm -rf $(PACKDIR)
+	mkdir $(PACKDIR)
+	ln $(PACK_FILES) $(PACKDIR)
+	tar -czf $(ARCHIVE) $(PACKDIR)
+	rm -rf $(PACKDIR)
+
 
 .PHONY: doc

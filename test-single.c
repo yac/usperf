@@ -1,10 +1,16 @@
 /** @file
  * Basic test and example usage of uperf.
  *
- * The *_S macro versions.
+ * The *_S macro version.
  */
 #include <stdio.h>
+
+/*
+ * You probably want to use uperf.h from include dir:
+ * #include <uperf.h>
+ */
 #include "uperf.h"
+
 
 /**
  * Uninteresting print-to-file helper, move along
@@ -53,6 +59,7 @@ const char * my_point_name(int point) {
  */
 int main()
 {
+	int i;
 	/*
 	 * Initialization.
 	 */
@@ -68,7 +75,7 @@ int main()
 	 */
 	PERFPOINT_S(1);
 
-	for( int i=0; i < 5; i++ ) {
+	for( i=0; i < 5; i++ ) {
 		PERFPOINT_S(2);
 	}
 
@@ -87,6 +94,8 @@ int main()
 	 */
 #ifdef UPERF
 	save_uperf_output("test.uperf.dot", UPERF_PRINT_DOT, my_point_name);
+#else
+	printf("uPerf is turned off (no -DUPERF passed to compiler?)\n");
 #endif
 
 	UPERF_CLOSE_S;
