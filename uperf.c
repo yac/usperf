@@ -188,6 +188,7 @@ uperf_print(struct uperf_s * uperf, FILE *stream, int format, const char * (*poi
 	}
 }
 
+#define UPERF_MAX_DELTA 1000
 /**
  * Insert perfpoint.
  *
@@ -209,10 +210,17 @@ perfpoint(struct uperf_s * uperf, int index)
 	edge = uperf->points + (index * PERFPOINTS_MAX) + uperf->last_point;
 
 	uint64_t cnt = get_count(uperf);
+	uint32_t ucount = edge->user_count;
+	uint64_t usum = edge->user_sum;
 
-	// TODO: insert awesome system time detection here
-	edge->user_count += 1;
-	edge->user_sum += cnt;
+	if ( ucount > 5 && cnt > (usum / ucount + UPERF_MAX_DELTA) ) {
+		edge->system_count += 1;
+		edge->system_sum += cnt;
+	}
+	else {
+		edge->user_count += 1;
+		edge->user_sum += cnt;
+	}
 
 	uperf->last_point = index;
 }

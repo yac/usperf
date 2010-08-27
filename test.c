@@ -86,7 +86,7 @@ int main()
 	 */
 	PERFPOINT(&uperf, 1);
 
-	for( i=0; i < 5; i++ ) {
+	for( i=0; i < 500000; i++ ) {
 		PERFPOINT(&uperf, 2);
 	}
 
