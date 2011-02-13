@@ -7,7 +7,7 @@
  * You probably want to use uperf.h from include dir:
  * #include <uperf.h>
  */
-#include "uperf.h"
+#include "../uperf.h"
 
 
 /**
