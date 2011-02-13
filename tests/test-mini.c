@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "uperf.h"
+#include "usperf.h"
 
 #define error(format, ...) { printf(format "\n", ## __VA_ARGS__); perror("errno msg"); exit(-1); }
 

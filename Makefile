@@ -1,7 +1,7 @@
 CC = gcc
-CFLAGS = -DDEBUG -DUPERF -Wall -g -Wextra -pedantic --std=gnu99
+CFLAGS = -DDEBUG -DUSPERF -Wall -g -Wextra -pedantic --std=gnu99
 
-NAME = uperf
+NAME = usperf
 VER = 0.3
 LIB = lib$(NAME).so
 PACKDIR = lib$(NAME)-$(VER)
@@ -9,7 +9,7 @@ ARCHIVE = $(PACKDIR).tgz
 
 TEST_DIR = tests
 
-PACK_FILES = uperf.c uperf.h perf.c Makefile README
+PACK_FILES = usperf.c usperf.h perf.c Makefile README
 
 
 all: $(LIB)
@@ -17,20 +17,20 @@ all: $(LIB)
 perf.o: perf.c
 	$(CC) -fpic -finline-functions -finline-functions-called-once $(CFLAGS) -c perf.c
 
-uperf.o: uperf.c
-	$(CC) -fpic -O2 $(CFLAGS) -c uperf.c
+usperf.o: usperf.c
+	$(CC) -fpic -O2 $(CFLAGS) -c usperf.c
 
-$(LIB): uperf.o perf.o
-	$(CC) -shared -Wl,-soname,$(LIB) $(CFLAGS) uperf.o perf.o -o $@
+$(LIB): usperf.o perf.o
+	$(CC) -shared -Wl,-soname,$(LIB) $(CFLAGS) usperf.o perf.o -o $@
 
 test-lib: $(LIB) $(TEST_DIR)/test.c
-	$(CC) -luperf $(CFLAGS) $(TEST_DIR)/test.c -o $@
+	$(CC) -lusperf $(CFLAGS) $(TEST_DIR)/test.c -o $@
 
-test-nolib: $(TEST_DIR)/test.c perf.o uperf.o
-	$(CC) $(CFLAGS) perf.o uperf.o $(TEST_DIR)/test.c -o $@
+test-nolib: $(TEST_DIR)/test.c perf.o usperf.o
+	$(CC) $(CFLAGS) perf.o usperf.o $(TEST_DIR)/test.c -o $@
 
 test-single: $(TEST_DIR)/test-single.c
-	$(CC) -luperf $(CFLAGS) $(TEST_DIR)/test-single.c -o $@
+	$(CC) -lusperf $(CFLAGS) $(TEST_DIR)/test-single.c -o $@
 
 test-mini: $(TEST_DIR)/test-mini.c perf.o
 	$(CC) $(CFLAGS) perf.o $(TEST_DIR)/test-mini.c -o $@

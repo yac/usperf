@@ -1,23 +1,23 @@
 /** @file
- * Basic test and example usage of uperf.
+ * Basic test and example usage of usperf.
  */
 #include <stdio.h>
 
 /*
- * You probably want to use uperf.h from include dir:
- * #include <uperf.h>
+ * You probably want to use usperf.h from include dir:
+ * #include <usperf.h>
  */
-#include "../uperf.h"
+#include "../usperf.h"
 
 
 /**
  * Uninteresting print-to-file helper, move along
  */
-int save_uperf_output(const char *path, struct uperf_s * uperf, int format, const char * (*point_name_fnc)(int)) {
+int save_usperf_output(const char *path, struct usperf_s * usperf, int format, const char * (*point_name_fnc)(int)) {
 	FILE *log = fopen(path, "w");
 
 	if (log != NULL) {
-		UPERF_PRINT(uperf, log, format, point_name_fnc);
+		USPERF_PRINT(usperf, log, format, point_name_fnc);
 
 		fclose(log);
 	}
@@ -32,7 +32,7 @@ int save_uperf_output(const char *path, struct uperf_s * uperf, int format, cons
 /**
  * Example function for named perfpoints.
  *
- * Pass function with this signature (int -> const char*) to UPERF_PRINT() to
+ * Pass function with this signature (int -> const char*) to USPERF_PRINT() to
  * print perfpoint names instead of just numbers.
  */
 const char * my_point_name(int point) {
@@ -53,18 +53,18 @@ const char * my_point_name(int point) {
 }
 
 /**
- * Basic uperf usage.
+ * Basic usperf usage.
  */
 int main()
 {
 	int i;
 
 	/**
-	 * struct uperf_s is used to store uperf info and is passed to UPERF_*
-	 * macros. You can also use UPERF_*_S() macros if you are not to use more 
+	 * struct usperf_s is used to store usperf info and is passed to USPERF_*
+	 * macros. You can also use USPERF_*_S() macros if you are not to use more 
 	 * than one structure (==no threads).
 	 */
-	struct uperf_s uperf;
+	struct usperf_s usperf;
 	
 	/*
 	 * Initialization.
@@ -74,43 +74,43 @@ int main()
 	 * @li PERF_COUNT_HW_CPU_CYCLES
 	 * @li PERF_COUNT_HW_INSTRUCTION
 	 */
-	int c = UPERF_INIT(&uperf, 128, PERF_COUNT_HW_INSTRUCTIONS);
+	int c = USPERF_INIT(&usperf, 128, PERF_COUNT_HW_INSTRUCTIONS);
 
 	if( c != 0 ) {
-		printf("uperf init failed: %d\n", c);
+		printf("usperf init failed: %d\n", c);
 		return c;
 	}
 
 	/*
-	 * Perfpoint with index 1. 0 is reserved for initial entry (UPERF_INIT).
+	 * Perfpoint with index 1. 0 is reserved for initial entry (USPERF_INIT).
 	 */
-	PERFPOINT(&uperf, 1);
+	PERFPOINT(&usperf, 1);
 
 	for( i=0; i < 500000; i++ ) {
-		PERFPOINT(&uperf, 2);
+		PERFPOINT(&usperf, 2);
 	}
 
-	PERFPOINT(&uperf, 3);
-	PERFPOINT(&uperf, 10);
+	PERFPOINT(&usperf, 3);
+	PERFPOINT(&usperf, 10);
 
 
 	/*
-	 * UPERF_PRINT will print uperf statistics to given stream. See its
+	 * USPERF_PRINT will print usperf statistics to given stream. See its
 	 * description for more info about formats.
 	 */
-	UPERF_PRINT(&uperf, stdout, UPERF_PRINT_DEFAULT, my_point_name);
+	USPERF_PRINT(&usperf, stdout, USPERF_PRINT_DEFAULT, my_point_name);
 
 	/*
-	 * if UPERF symbol is not defined, UPERF_* macros are disabled. This may
+	 * if USPERF symbol is not defined, USPERF_* macros are disabled. This may
 	 * lead to "unused ..." warning - nothing is ever perfect (in C).
 	 */
-#ifdef UPERF
-	save_uperf_output("test.uperf.dot", &uperf, UPERF_PRINT_DOT, my_point_name);
+#ifdef USPERF
+	save_usperf_output("test.usperf.dot", &usperf, USPERF_PRINT_DOT, my_point_name);
 #else
-	printf("uPerf is turned off (no -DUPERF passed to compiler?)\n");
+	printf("usperf is turned off (no -DUSPERF passed to compiler?)\n");
 #endif
 
-	UPERF_CLOSE(&uperf);
+	USPERF_CLOSE(&usperf);
 
 	return 0;
 }

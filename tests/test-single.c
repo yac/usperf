@@ -1,25 +1,25 @@
 /** @file
- * Basic test and example usage of uperf.
+ * Basic test and example usage of usperf.
  *
  * The *_S macro version.
  */
 #include <stdio.h>
 
 /*
- * You probably want to use uperf.h from include dir:
- * #include <uperf.h>
+ * You probably want to use usperf.h from include dir:
+ * #include <usperf.h>
  */
-#include "uperf.h"
+#include "usperf.h"
 
 
 /**
  * Uninteresting print-to-file helper, move along
  */
-int save_uperf_output(const char *path, int format, const char * (*point_name_fnc)(int)) {
+int save_usperf_output(const char *path, int format, const char * (*point_name_fnc)(int)) {
 	FILE *log = fopen(path, "w");
 
 	if (log != NULL) {
-		UPERF_PRINT_S(log, format, point_name_fnc);
+		USPERF_PRINT_S(log, format, point_name_fnc);
 
 		fclose(log);
 	}
@@ -34,7 +34,7 @@ int save_uperf_output(const char *path, int format, const char * (*point_name_fn
 /**
  * Example function for named perfpoints.
  *
- * Pass function with this signature (int -> const char*) to UPERF_PRINT() to
+ * Pass function with this signature (int -> const char*) to USPERF_PRINT() to
  * print perfpoint names instead of just numbers.
  */
 const char * my_point_name(int point) {
@@ -55,7 +55,7 @@ const char * my_point_name(int point) {
 }
 
 /**
- * Basic uperf usage.
+ * Basic usperf usage.
  */
 int main()
 {
@@ -63,15 +63,15 @@ int main()
 	/*
 	 * Initialization.
 	 */
-	int c = UPERF_INIT_S(128, PERF_COUNT_HW_INSTRUCTIONS);
+	int c = USPERF_INIT_S(128, PERF_COUNT_HW_INSTRUCTIONS);
 
 	if( c != 0 ) {
-		printf("uperf init failed: %d\n", c);
+		printf("usperf init failed: %d\n", c);
 		return c;
 	}
 
 	/*
-	 * Perfpoint with index 1. 0 is reserved for initial entry (UPERF_INIT).
+	 * Perfpoint with index 1. 0 is reserved for initial entry (USPERF_INIT).
 	 */
 	PERFPOINT_S(1);
 
@@ -86,19 +86,19 @@ int main()
 	/*
 	 * Print statistics.
 	 */
-	UPERF_PRINT_S(stdout, UPERF_PRINT_DEFAULT, my_point_name);
+	USPERF_PRINT_S(stdout, USPERF_PRINT_DEFAULT, my_point_name);
 
 	/*
-	 * if UPERF symbol is not defined, UPERF_* macros are disabled. This may
+	 * if USPERF symbol is not defined, USPERF_* macros are disabled. This may
 	 * lead to "unused ..." warning - nothing is ever perfect (in C).
 	 */
-#ifdef UPERF
-	save_uperf_output("test.uperf.dot", UPERF_PRINT_DOT, my_point_name);
+#ifdef USPERF
+	save_usperf_output("test.usperf.dot", USPERF_PRINT_DOT, my_point_name);
 #else
-	printf("uPerf is turned off (no -DUPERF passed to compiler?)\n");
+	printf("usperf is turned off (no -DUSPERF passed to compiler?)\n");
 #endif
 
-	UPERF_CLOSE_S;
+	USPERF_CLOSE_S;
 
 	return 0;
 }

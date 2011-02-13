@@ -1,7 +1,7 @@
 /** @file
- * uperf userspace interface.
+ * usperf userspace interface.
  */
-#include "uperf.h"
+#include "usperf.h"
 #include <stdlib.h>
 
 
@@ -9,35 +9,35 @@
 #error "Not a right architecture."
 #endif
 
-/// Global evil for UPERF_*_S single-thread macros.
-struct uperf_s uperf_global;
+/// Global evil for USPERF_*_S single-thread macros.
+struct usperf_s usperf_global;
 
 /// Get raw timer data.
 inline uint64_t
-get_timer(struct uperf_s * uperf)
+get_timer(struct usperf_s * usperf)
 {
-	return pcounter_get(&(uperf->cnt));
+	return pcounter_get(&(usperf->cnt));
 }
 
 /// Get count since last perfpoint.
 inline uint64_t
-get_count(struct uperf_s * uperf)
+get_count(struct usperf_s * usperf)
 {
-	uint64_t timer = get_timer(uperf);
-	uint64_t delta = timer - uperf->last_count; 
-	uperf->last_count = timer;
+	uint64_t timer = get_timer(usperf);
+	uint64_t delta = timer - usperf->last_count; 
+	usperf->last_count = timer;
 
 	return delta;
 }
 
 /**
- * Init uperf structure.
+ * Init usperf structure.
  *
- * Prepare supplied struct uperf_s - init HW perf counter and alloc perfpoints
+ * Prepare supplied struct usperf_s - init HW perf counter and alloc perfpoints
  * array. Note that (perfpoints_max + 1)^2 array of <tt>struct perfpoint_edge_s</tt>
  * (24 bytes at time of writing) will be allocated.
  *
- * @param[in,out] uperf uperf structure to init
+ * @param[in,out] usperf usperf structure to init
  * @param[in] perfpoints_max max number of perfpoints
  * @param[in] counter_type what to count - <tt>`grep PERF_COUNT_HW /usr/include/linux/perf_event.h`</tt> for possible values. The two most popular ones:
  * @li PERF_COUNT_HW_CPU_CYCLES - count CPU cycles
@@ -45,18 +45,18 @@ get_count(struct uperf_s * uperf)
  * @return 0 on success, see perf.c:pcounter_init() for error values
  */
 int
-uperf_init(struct uperf_s * uperf, int perfpoints_max, int counter_type)
+usperf_init(struct usperf_s * usperf, int perfpoints_max, int counter_type)
 {
 	struct perfpoint_edge_s *edge;
 
-	if( pcounter_init(&(uperf->cnt), counter_type) != 0 )
-		return uperf->cnt.state;
+	if( pcounter_init(&(usperf->cnt), counter_type) != 0 )
+		return usperf->cnt.state;
 
-	uperf->perfpoints_max = perfpoints_max + 1;
-	uperf->edges_max = perfpoints_max * perfpoints_max;
-	uperf->points = malloc(sizeof(struct perfpoint_edge_s) * uperf->edges_max);
+	usperf->perfpoints_max = perfpoints_max + 1;
+	usperf->edges_max = perfpoints_max * perfpoints_max;
+	usperf->points = malloc(sizeof(struct perfpoint_edge_s) * usperf->edges_max);
 
-	edge = uperf->points;
+	edge = usperf->points;
 	for( int i = 0; i < PERFPOINT_EDGES_MAX; i++) {
 		edge->user_count = 0;
 		edge->user_sum = 0;
@@ -66,40 +66,40 @@ uperf_init(struct uperf_s * uperf, int perfpoints_max, int counter_type)
 		edge++;
 	}
 
-	pcounter_enable(&(uperf->cnt));
+	pcounter_enable(&(usperf->cnt));
 
 	// NOTE: 0 is used for entry point
-	uperf->counter_type = counter_type;
-	uperf->last_point = 0;
-	uperf->last_count = get_timer(uperf);
+	usperf->counter_type = counter_type;
+	usperf->last_point = 0;
+	usperf->last_count = get_timer(usperf);
 
-	return uperf->cnt.state;
+	return usperf->cnt.state;
 }
 
-const char UPERF_DOT_HEAD[] = "digraph \"uperf\" {\n"
+const char USPERF_DOT_HEAD[] = "digraph \"usperf\" {\n"
 "	rankdir=UD\n"
 "	size = \"6,6\"\n"
 "	node [ fontname = \"Helvetica\" ];\n";
-const char UPERF_DOT_TAIL[] = "}\n";
-const char UPERF_PRINT_MALLOC_FAILED[] = "Memory allocation required for printing failed. What the...";
+const char USPERF_DOT_TAIL[] = "}\n";
+const char USPERF_PRINT_MALLOC_FAILED[] = "Memory allocation required for printing failed. What the...";
 
-#define UPERF_DOT_MAX_PENWIDTH 20
+#define USPERF_DOT_MAX_PENWIDTH 20
 
 /**
- * Print uperf statistics to specified stream.
+ * Print usperf statistics to specified stream.
  *
  * Text and dot (graphviz) formats are supported. If point_name_fnc function
  * is supplied, it will be used to obtain the names of perfpoints.
  *
- * @param[in] uperf uperf structure to print
+ * @param[in] usperf usperf structure to print
  * @param[out] stream stream to print output to
  * @param[in] format print format, one of:
- * @li UPERF_PRINT_DEFAULT - text format
- * @li UPERF_PRINT_DOT - dot (graphviz) format (run through dot to obtain a graph)
+ * @li USPERF_PRINT_DEFAULT - text format
+ * @li USPERF_PRINT_DOT - dot (graphviz) format (run through dot to obtain a graph)
  * @param point_name_fnc custom function that will return the name of perfpoint. Leave NULL to use perfpoint numbers.
  */
 void
-uperf_print(struct uperf_s * uperf, FILE *stream, int format, const char * (*point_name_fnc)(int))
+usperf_print(struct usperf_s * usperf, FILE *stream, int format, const char * (*point_name_fnc)(int))
 {
 	struct perfpoint_edge_s *edge;
 	uint64_t uavg, savg;
@@ -107,11 +107,11 @@ uperf_print(struct uperf_s * uperf, FILE *stream, int format, const char * (*poi
 	uint32_t cnt_max = 0;
 	uint32_t peniswidth, color;
 
-	if( format == UPERF_PRINT_DOT ) {
-		fprintf(stream, UPERF_DOT_HEAD);
+	if( format == USPERF_PRINT_DOT ) {
+		fprintf(stream, USPERF_DOT_HEAD);
 
 		// We need maxima to print something meaningful.
-		edge = uperf->points;
+		edge = usperf->points;
 		for( int i = 0; i < PERFPOINTS_MAX; i++) {
 			for( int j = 0; j < PERFPOINTS_MAX; j++) {
 				if( edge->user_count > 0 ) {
@@ -132,13 +132,13 @@ uperf_print(struct uperf_s * uperf, FILE *stream, int format, const char * (*poi
 		}
 
 		// with small cnt_max, line'd be ridiculously large for small counts
-		if( cnt_max < UPERF_DOT_MAX_PENWIDTH )
-			cnt_max = UPERF_DOT_MAX_PENWIDTH;
+		if( cnt_max < USPERF_DOT_MAX_PENWIDTH )
+			cnt_max = USPERF_DOT_MAX_PENWIDTH;
 
 		avg_max += 1;
 	}
 
-	edge = uperf->points;
+	edge = usperf->points;
 
 	for( int i = 0; i < PERFPOINTS_MAX; i++) {
 		for( int j = 0; j < PERFPOINTS_MAX; j++) {
@@ -152,9 +152,9 @@ uperf_print(struct uperf_s * uperf, FILE *stream, int format, const char * (*poi
 				else
 					savg = 0;
 
-				if( format == UPERF_PRINT_DOT ) {
+				if( format == USPERF_PRINT_DOT ) {
 					// pen width depends on number of transitions
-					peniswidth = (int)((float)(edge->user_count) / (float)(cnt_max) * UPERF_DOT_MAX_PENWIDTH) + 1;
+					peniswidth = (int)((float)(edge->user_count) / (float)(cnt_max) * USPERF_DOT_MAX_PENWIDTH) + 1;
 					color = (int)(((float)(uavg - avg_min) / (float)(avg_max - avg_min)) * 254) + 1;
 					if (point_name_fnc == NULL) {
 						fprintf(stream, "	\"%d\" -> \"%d\"", j, i);
@@ -183,37 +183,37 @@ uperf_print(struct uperf_s * uperf, FILE *stream, int format, const char * (*poi
 		}
 	}
 
-	if( format == UPERF_PRINT_DOT ) {
-		fprintf(stream, UPERF_DOT_TAIL);
+	if( format == USPERF_PRINT_DOT ) {
+		fprintf(stream, USPERF_DOT_TAIL);
 	}
 }
 
-#define UPERF_MAX_DELTA 1000
+#define USPERF_MAX_DELTA 1000
 /**
  * Insert perfpoint.
  *
  * Each time this function is called, timer is read and elapsed time since last
- * perfpoint is written into the supplied uperf structure. Each perfpoint is
+ * perfpoint is written into the supplied usperf structure. Each perfpoint is
  * identified by an integer ranging from 1 to perfpoints_max (specified in
- * uperf_init). Index 0 is reserved for program entry (counter
+ * usperf_init). Index 0 is reserved for program entry (counter
  * initialization). Also this is C, so if you supply too big index, expect
  * usual SIGSEGV-and-friends fun.
  *
- * @param[in,out] uperf uperf structure to write info to.
+ * @param[in,out] usperf usperf structure to write info to.
  * @param[in] index perfpoint index <1; perfpoints_max>
  */
 void
-perfpoint(struct uperf_s * uperf, int index)
+perfpoint(struct usperf_s * usperf, int index)
 {
 	struct perfpoint_edge_s *edge;
    
-	edge = uperf->points + (index * PERFPOINTS_MAX) + uperf->last_point;
+	edge = usperf->points + (index * PERFPOINTS_MAX) + usperf->last_point;
 
-	uint64_t cnt = get_count(uperf);
+	uint64_t cnt = get_count(usperf);
 	uint32_t ucount = edge->user_count;
 	uint64_t usum = edge->user_sum;
 
-	if ( ucount > 5 && cnt > (usum / ucount + UPERF_MAX_DELTA) ) {
+	if ( ucount > 5 && cnt > (usum / ucount + USPERF_MAX_DELTA) ) {
 		edge->system_count += 1;
 		edge->system_sum += cnt;
 	}
@@ -222,16 +222,16 @@ perfpoint(struct uperf_s * uperf, int index)
 		edge->user_sum += cnt;
 	}
 
-	uperf->last_point = index;
+	usperf->last_point = index;
 }
 
 /**
- * Clean up uperf structure.
- * @param[in,out] uperf uperf structure to close
+ * Clean up usperf structure.
+ * @param[in,out] usperf usperf structure to close
  */
 void
-uperf_close(struct uperf_s * uperf)
+usperf_close(struct usperf_s * usperf)
 {
-	free(uperf->points);
-	pcounter_close(&(uperf->cnt));
+	free(usperf->points);
+	pcounter_close(&(usperf->cnt));
 }

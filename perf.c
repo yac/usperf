@@ -19,7 +19,7 @@
 #include <error.h>
 #include <fcntl.h>
 
-#include "uperf.h"
+#include "usperf.h"
 
 
 #define __NR_perf_event_open          298
