@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -DDEBUG -DUSPERF -Wall -g -Wextra -pedantic --std=gnu99
 
 NAME = usperf
-VER = 0.3
+VER = 0.4
 LIB = lib$(NAME).so
 PACKDIR = lib$(NAME)-$(VER)
 ARCHIVE = $(PACKDIR).tgz
@@ -23,22 +23,8 @@ usperf.o: usperf.c
 $(LIB): usperf.o perf.o
 	$(CC) -shared -Wl,-soname,$(LIB) $(CFLAGS) usperf.o perf.o -o $@
 
-test-lib: $(LIB) $(TEST_DIR)/test.c
-	$(CC) -lusperf $(CFLAGS) $(TEST_DIR)/test.c -o $@
-
-test-nolib: $(TEST_DIR)/test.c perf.o usperf.o
-	$(CC) $(CFLAGS) perf.o usperf.o $(TEST_DIR)/test.c -o $@
-
-test-single: $(TEST_DIR)/test-single.c
-	$(CC) -lusperf $(CFLAGS) $(TEST_DIR)/test-single.c -o $@
-
-test-mini: $(TEST_DIR)/test-mini.c perf.o
-	$(CC) $(CFLAGS) perf.o $(TEST_DIR)/test-mini.c -o $@
-
-test-rdpmc: $(TEST_DIR)/test-rdpmc.c
-	$(CC) $(CFLAGS) $(TEST_DIR)/test-rdpmc.c -o $@
-
-tests: test-lib test-rdpmc test-single test-mini test-nolib
+tests: 
+	$(MAKE) -C $(TEST_DIR)
 	
 doc:
 	doxygen
@@ -46,11 +32,13 @@ doc:
 run: install test-lib
 	./test-lib
 
+# attempts to install into library path from ldconfig, usually /usr/lib{,64}
 install: $(LIB)
-	install $(LIB) /usr/lib64/
+	install $(LIB) `/sbin/ldconfig -p | sed -nr '5p' | sed -re 's#^.* => (\/.+\/)[^/]+#\1#'`
 
 clean:
 	rm -f $(LIB) *.o test-lib test-nolib test-single test-rdpmc test-mini
+	$(MAKE) -C $(TEST_DIR) clean
 
 dist:
 	rm -rf $(PACKDIR)
@@ -60,4 +48,4 @@ dist:
 	rm -rf $(PACKDIR)
 
 
-.PHONY: doc
+.PHONY: doc tests

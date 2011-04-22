@@ -210,14 +210,12 @@ uint64_t pcounter_get(struct pcounter *cnt)
 		barrier();
 
 		if (pc->index) {
-			/*printf("HW counter index: %d\n", pc->index);*/
 			count = rdpmc(pc->index - 1);
-			/*count = rdpmc(0 | (1 << 30));*/
 			count += pc->offset;
 		}
 		else {
 			// TODO: consider putting normal read here
-			printf("No HW counter for this perf event!\n");
+			// printf("No HW counter for this perf event!\n");
 			return -1;
 		}
 

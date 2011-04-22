@@ -5,12 +5,11 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "usperf.h"
+#include "../usperf.h"
 
 #define error(format, ...) { printf(format "\n", ## __VA_ARGS__); perror("errno msg"); exit(-1); }
 
 int
-/*main(int argc, char *argv[])*/
 main()
 {
 	struct pcounter cntr;
@@ -32,7 +31,7 @@ main()
 			printf("And one more to be sure: %ld\n", count);
 		}
 		else {
-			printf("No, not event the fucking read().\n");
+			printf("No, not event the fu*king read().\n");
 		}
 	}
 

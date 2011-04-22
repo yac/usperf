@@ -12,7 +12,6 @@ inline uint64_t rdpmc(uint32_t reg)
 }
 
 int
-/*main(int argc, char *argv[])*/
 main()
 {
 	uint32_t counter = 0;
