@@ -16,12 +16,8 @@ WHAT THE...
 
 
 STATUS
-	Sadly, after many years RDPMC is still only enabled in ring 0 in linux
-	kernel (as of 2.6.39) and kernel has to be patched (CR4.PCE flag has to be
-	set to 1).
-
+	Linux kernel needs to be patched, see KERNEL PATCH.
 	libusperf userspace library is in alpha stage and ready for testing. 
-
 
 HOW IT WORKS
 	- create hardware perf event (counter) through system call 
@@ -29,18 +25,27 @@ HOW IT WORKS
 	- continually read the HW counter associated with perf event from
 	  userspace using RDPMC
 
-
 THE PROBLEM
 	Context/CPU switches are not yet compensated! This is the main problem
 	that needs to be solved.
 
+KERNEL PATCH
+	Linux kernel (as of 2.6.39) needs to be patched to:
+		- Allow RDPMC instrution from userspace. This is done by setting
+		  CR4.PCE CPU flag on x86 which is unset by default allowing RDPMC to
+		  be called only from ring 0
+		- Get the HW counter index for RPDMC. That is achieved by making
+		  perf_event_index() a struct pmu (== arch specific) function. 
+	
+	Patches to do so are available in kernel-patch/ directory. Patches are
+	small but tested to work on x86 only. If you have a powerpc/arm machine
+	you'd like to use, please DO let me know!
+
 
 PREREQUISITIES/INSTALLATION
 	You need a machine with PMC, which are present on most of new intel/AMD
-	(and even powerPC) CPUs. Then you need a linux kernel with perf events
-	subsystem (>= 2.6.32), RDPMC enabled. The patches in ./kernel-patch/ are
-	required for that on intel x86{_64}.  Efforts to push into mainline are
-	underway.
+	(power/arm too, of course) CPUs. Then you need a linux kernel with perf
+	events subsystem and patches applied (see KERNEL PATCH above). 
 
 	Even though you can copy and use {us,}perf.[ch], using library is
 	recommended.  Use either the libusperf RPM package or run `make` and copy
