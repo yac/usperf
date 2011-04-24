@@ -1,0 +1,27 @@
+From fb94b48b0263a4bb6c698b9580a49354e7ff5e13 Mon Sep 17 00:00:00 2001
+From: Jakub Ruzicka <jruzicka@linuxbox.cz>
+Date: Sun, 24 Apr 2011 13:28:14 +0200
+Subject: [PATCH 1/3] perf_events, x86: Enable RDPMC from userspace
+
+---
+ arch/x86/kernel/cpu/perf_event_intel.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/arch/x86/kernel/cpu/perf_event_intel.c b/arch/x86/kernel/cpu/perf_event_intel.c
+index 8fc2b2c..50f6531 100644
+--- a/arch/x86/kernel/cpu/perf_event_intel.c
++++ b/arch/x86/kernel/cpu/perf_event_intel.c
+@@ -1229,6 +1229,10 @@ static void intel_pmu_cpu_starting(int cpu)
+ 	 * Deal with CPUs that don't clear their LBRs on power-up.
+ 	 */
+ 	intel_pmu_lbr_reset();
++	/*
++	 * Enable RDPMC instruction in userspace.
++	 */
++	set_in_cr4(X86_CR4_PCE); 
+ 
+ 	if (!cpu_has_ht_siblings())
+ 		return;
+-- 
+1.7.4.1
+

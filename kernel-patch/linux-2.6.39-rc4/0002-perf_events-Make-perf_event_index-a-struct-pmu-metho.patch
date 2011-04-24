@@ -1,0 +1,198 @@
+From d66766e628630f65fa0999b0ea558abcb5ffaeaf Mon Sep 17 00:00:00 2001
+From: Jakub Ruzicka <jruzicka@linuxbox.cz>
+Date: Sun, 24 Apr 2011 13:29:30 +0200
+Subject: [PATCH 2/3] perf_events: Make perf_event_index() a struct pmu method
+
+---
+ arch/arm/kernel/perf_event.c     |   15 +++++++++++++++
+ arch/powerpc/kernel/perf_event.c |   19 +++++++++++++++++++
+ arch/x86/kernel/cpu/perf_event.c |   21 +++++++++++++++++++++
+ include/linux/perf_event.h       |    6 ++++++
+ kernel/perf_event.c              |   24 ++++++++----------------
+ 5 files changed, 69 insertions(+), 16 deletions(-)
+
+diff --git a/arch/arm/kernel/perf_event.c b/arch/arm/kernel/perf_event.c
+index 979da39..145854e 100644
+--- a/arch/arm/kernel/perf_event.c
++++ b/arch/arm/kernel/perf_event.c
+@@ -612,6 +612,20 @@ static void armpmu_disable(struct pmu *pmu)
+ 		armpmu->stop();
+ }
+ 
++static int armpmu_index(struct perf_event *event)
++{
++	if (event->pmu->type != PERF_TYPE_HARDWARE)
++		return 0;
++
++	if (event->hw.state & PERF_HES_STOPPED)
++		return 0;
++
++	if (event->state != PERF_EVENT_STATE_ACTIVE)
++		return 0;
++
++	return event->hw.idx; /* +1 (0 means N/A) -1 (arm counter start from 1) */
++}
++
+ static struct pmu pmu = {
+ 	.pmu_enable	= armpmu_enable,
+ 	.pmu_disable	= armpmu_disable,
+@@ -621,6 +635,7 @@ static struct pmu pmu = {
+ 	.start		= armpmu_start,
+ 	.stop		= armpmu_stop,
+ 	.read		= armpmu_read,
++	.index          = armpmu_index,
+ };
+ 
+ /* Include the PMU-specific implementations. */
+diff --git a/arch/powerpc/kernel/perf_event.c b/arch/powerpc/kernel/perf_event.c
+index 822f630..9063acc 100644
+--- a/arch/powerpc/kernel/perf_event.c
++++ b/arch/powerpc/kernel/perf_event.c
+@@ -910,6 +910,24 @@ static void power_pmu_stop(struct perf_event *event, int ef_flags)
+ }
+ 
+ /*
++ * Return the event index that can be read from userspace
++ * through mmap and used with RDPMC instruction.
++ */
++static int power_pmu_index(struct perf_event *event)
++{
++	if (event->pmu->type != PERF_TYPE_HARDWARE)
++		return 0;
++
++	if (event->hw.state & PERF_HES_STOPPED)
++		return 0;
++
++	if (event->state != PERF_EVENT_STATE_ACTIVE)
++		return 0;
++
++	return event->hw.idx; /* +1 (0 means N/A) -1 (power specific offset) */
++}
++
++/*
+  * Start group events scheduling transaction
+  * Set the flag to make pmu::enable() not perform the
+  * schedulability test, it will be performed at commit time
+@@ -1199,6 +1217,7 @@ struct pmu power_pmu = {
+ 	.start_txn	= power_pmu_start_txn,
+ 	.cancel_txn	= power_pmu_cancel_txn,
+ 	.commit_txn	= power_pmu_commit_txn,
++	.index          = power_pmu_index,
+ };
+ 
+ /*
+diff --git a/arch/x86/kernel/cpu/perf_event.c b/arch/x86/kernel/cpu/perf_event.c
+index eed3673a..611b4fd 100644
+--- a/arch/x86/kernel/cpu/perf_event.c
++++ b/arch/x86/kernel/cpu/perf_event.c
+@@ -1165,6 +1165,25 @@ static void x86_pmu_start(struct perf_event *event, int flags)
+ 	perf_event_update_userpage(event);
+ }
+ 
++static int x86_pmu_index(struct perf_event *event)
++{
++	int index;
++
++	if (event->pmu->type != PERF_TYPE_HARDWARE)
++		return 0;
++
++	if (event->hw.state & PERF_HES_STOPPED)
++		return 0;
++
++	if (event->state != PERF_EVENT_STATE_ACTIVE)
++		return 0;
++
++ 	index = event->hw.idx;
++	if (index >= 32)
++		index = (index - 32) | (1 << 30);
++	return index + 1;
++}
++
+ void perf_event_print_debug(void)
+ {
+ 	u64 ctrl, status, overflow, pmc_ctrl, pmc_count, prev_left, fixed;
+@@ -1748,6 +1767,8 @@ static struct pmu pmu = {
+ 	.start_txn	= x86_pmu_start_txn,
+ 	.cancel_txn	= x86_pmu_cancel_txn,
+ 	.commit_txn	= x86_pmu_commit_txn,
++
++	.index		= x86_pmu_index,
+ };
+ 
+ /*
+diff --git a/include/linux/perf_event.h b/include/linux/perf_event.h
+index ee9f1e7..b0bd4ba 100644
+--- a/include/linux/perf_event.h
++++ b/include/linux/perf_event.h
+@@ -665,6 +665,12 @@ struct pmu {
+ 	 * for each successful ->add() during the transaction.
+ 	 */
+ 	void (*cancel_txn)	(struct pmu *pmu); /* optional */
++
++	/*
++	 * Return the event counter index that can be read from userspace
++	 * through mmap and used with RDPMC instruction.
++	 */
++	int (*index)			(struct perf_event *event);
+ };
+ 
+ /**
+diff --git a/kernel/perf_event.c b/kernel/perf_event.c
+index 8e81a98..0e4d5b4 100644
+--- a/kernel/perf_event.c
++++ b/kernel/perf_event.c
+@@ -3351,21 +3351,6 @@ int perf_event_task_disable(void)
+ 	return 0;
+ }
+ 
+-#ifndef PERF_EVENT_INDEX_OFFSET
+-# define PERF_EVENT_INDEX_OFFSET 0
+-#endif
+-
+-static int perf_event_index(struct perf_event *event)
+-{
+-	if (event->hw.state & PERF_HES_STOPPED)
+-		return 0;
+-
+-	if (event->state != PERF_EVENT_STATE_ACTIVE)
+-		return 0;
+-
+-	return event->hw.idx + 1 - PERF_EVENT_INDEX_OFFSET;
+-}
+-
+ /*
+  * Callers need to ensure there can be no nesting of this function, otherwise
+  * the seqlock logic goes bad. We can not serialize this because the arch
+@@ -3390,7 +3375,7 @@ void perf_event_update_userpage(struct perf_event *event)
+ 	preempt_disable();
+ 	++userpg->lock;
+ 	barrier();
+-	userpg->index = perf_event_index(event);
++	userpg->index = event->pmu->index(event);
+ 	userpg->offset = perf_event_count(event);
+ 	if (event->state == PERF_EVENT_STATE_ACTIVE)
+ 		userpg->offset -= local64_read(&event->hw.prev_count);
+@@ -5474,6 +5459,11 @@ static int perf_swevent_init(struct perf_event *event)
+ 	return 0;
+ }
+ 
++static int perf_swevent_index(struct perf_event *event)
++{
++	return 0;
++}
++
+ static struct pmu perf_swevent = {
+ 	.task_ctx_nr	= perf_sw_context,
+ 
+@@ -5483,6 +5473,8 @@ static struct pmu perf_swevent = {
+ 	.start		= perf_swevent_start,
+ 	.stop		= perf_swevent_stop,
+ 	.read		= perf_swevent_read,
++
++	.index		= perf_swevent_index,
+ };
+ 
+ #ifdef CONFIG_EVENT_TRACING
+-- 
+1.7.4.1
+

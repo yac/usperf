@@ -1,0 +1,78 @@
+From cfb0701242cfbff0ee7c63d5cc01b7462f65673f Mon Sep 17 00:00:00 2001
+From: Jakub Ruzicka <jruzicka@linuxbox.cz>
+Date: Sun, 24 Apr 2011 14:30:11 +0200
+Subject: [PATCH 3/3] perf_events: Removed unused PERF_EVENT_INDEX_OFFSET
+
+---
+ arch/arm/include/asm/perf_event.h            |    4 ----
+ arch/frv/include/asm/perf_event.h            |    2 --
+ arch/powerpc/include/asm/perf_event_server.h |    2 --
+ arch/s390/include/asm/perf_event.h           |    2 --
+ arch/x86/include/asm/perf_event.h            |    2 --
+ 5 files changed, 0 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/include/asm/perf_event.h b/arch/arm/include/asm/perf_event.h
+index c4aa4e8..b11cae7 100644
+--- a/arch/arm/include/asm/perf_event.h
++++ b/arch/arm/include/asm/perf_event.h
+@@ -12,10 +12,6 @@
+ #ifndef __ARM_PERF_EVENT_H__
+ #define __ARM_PERF_EVENT_H__
+ 
+-/* ARM performance counters start from 1 (in the cp15 accesses) so use the
+- * same indexes here for consistency. */
+-#define PERF_EVENT_INDEX_OFFSET 1
+-
+ /* ARM perf PMU IDs for use by internal perf clients. */
+ enum arm_perf_pmu_ids {
+ 	ARM_PERF_PMU_ID_XSCALE1	= 0,
+diff --git a/arch/frv/include/asm/perf_event.h b/arch/frv/include/asm/perf_event.h
+index a69e015..c52ea55 100644
+--- a/arch/frv/include/asm/perf_event.h
++++ b/arch/frv/include/asm/perf_event.h
+@@ -12,6 +12,4 @@
+ #ifndef _ASM_PERF_EVENT_H
+ #define _ASM_PERF_EVENT_H
+ 
+-#define PERF_EVENT_INDEX_OFFSET	0
+-
+ #endif /* _ASM_PERF_EVENT_H */
+diff --git a/arch/powerpc/include/asm/perf_event_server.h b/arch/powerpc/include/asm/perf_event_server.h
+index 8f1df12..1a8093f 100644
+--- a/arch/powerpc/include/asm/perf_event_server.h
++++ b/arch/powerpc/include/asm/perf_event_server.h
+@@ -61,8 +61,6 @@ struct pt_regs;
+ extern unsigned long perf_misc_flags(struct pt_regs *regs);
+ extern unsigned long perf_instruction_pointer(struct pt_regs *regs);
+ 
+-#define PERF_EVENT_INDEX_OFFSET	1
+-
+ /*
+  * Only override the default definitions in include/linux/perf_event.h
+  * if we have hardware PMU support.
+diff --git a/arch/s390/include/asm/perf_event.h b/arch/s390/include/asm/perf_event.h
+index a75f168..85b0894 100644
+--- a/arch/s390/include/asm/perf_event.h
++++ b/arch/s390/include/asm/perf_event.h
+@@ -5,5 +5,3 @@
+  */
+ 
+ /* Empty, just to avoid compiling error */
+-
+-#define PERF_EVENT_INDEX_OFFSET 0
+diff --git a/arch/x86/include/asm/perf_event.h b/arch/x86/include/asm/perf_event.h
+index d9d4dae..6e90b9b 100644
+--- a/arch/x86/include/asm/perf_event.h
++++ b/arch/x86/include/asm/perf_event.h
+@@ -127,8 +127,6 @@ union cpuid10_edx {
+ #ifdef CONFIG_PERF_EVENTS
+ extern void perf_events_lapic_init(void);
+ 
+-#define PERF_EVENT_INDEX_OFFSET			0
+-
+ /*
+  * Abuse bit 3 of the cpu eflags register to indicate proper PEBS IP fixups.
+  * This flag is otherwise unused and ABI specified to be 0, so nobody should
+-- 
+1.7.4.1
+

@@ -1,0 +1,27 @@
+From 3fe653421b102d70d6e4eb594b2721c4065554f0 Mon Sep 17 00:00:00 2001
+From: Jakub Ruzicka <ruzicka.jakub@gmail.com>
+Date: Wed, 11 Aug 2010 11:10:03 +0200
+Subject: [PATCH] perf_events, x86: Enable RDPMC instruction in userspace
+
+---
+ arch/x86/kernel/cpu/perf_event_intel.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/arch/x86/kernel/cpu/perf_event_intel.c b/arch/x86/kernel/cpu/perf_event_intel.c
+index 214ac86..4a65cb0 100644
+--- a/arch/x86/kernel/cpu/perf_event_intel.c
++++ b/arch/x86/kernel/cpu/perf_event_intel.c
+@@ -816,6 +816,10 @@ static void intel_pmu_cpu_starting(int cpu)
+ 	 * Deal with CPUs that don't clear their LBRs on power-up.
+ 	 */
+ 	intel_pmu_lbr_reset();
++	/*
++	 * Enable RDPMC instruction in userspace.
++	 */
++	set_in_cr4(X86_CR4_PCE); 
+ }
+ 
+ static void intel_pmu_cpu_dying(int cpu)
+-- 
+1.5.5.6
+

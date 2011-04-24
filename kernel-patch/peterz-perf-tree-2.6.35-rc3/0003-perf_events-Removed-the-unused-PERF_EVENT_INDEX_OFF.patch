@@ -1,0 +1,118 @@
+From e940e72c9e905175cb0f408e488d1533b31ef7e6 Mon Sep 17 00:00:00 2001
+From: Jakub Ruzicka <ruzicka.jakub@gmail.com>
+Date: Wed, 11 Aug 2010 12:03:15 +0200
+Subject: [PATCH] perf_events: Removed the unused PERF_EVENT_INDEX_OFFSET
+
+Note: arch/frv/include/asm/perf_event.h is empty and might eventually be
+removed.
+---
+ arch/alpha/include/asm/perf_event.h          |    2 --
+ arch/arm/include/asm/perf_event.h            |    4 ----
+ arch/frv/include/asm/perf_event.h            |    2 --
+ arch/powerpc/include/asm/perf_event_server.h |    2 --
+ arch/s390/include/asm/perf_event.h           |    2 --
+ arch/sh/include/asm/perf_event.h             |    2 --
+ arch/sparc/include/asm/perf_event.h          |    2 --
+ arch/x86/include/asm/perf_event.h            |    2 --
+ 8 files changed, 0 insertions(+), 18 deletions(-)
+
+diff --git a/arch/alpha/include/asm/perf_event.h b/arch/alpha/include/asm/perf_event.h
+index 3bef852..e0b8c0e 100644
+--- a/arch/alpha/include/asm/perf_event.h
++++ b/arch/alpha/include/asm/perf_event.h
+@@ -4,6 +4,4 @@
+ /* Alpha only supports software events through this interface. */
+ static inline void set_perf_event_pending(void) { }
+ 
+-#define PERF_EVENT_INDEX_OFFSET 0
+-
+ #endif /* __ASM_ALPHA_PERF_EVENT_H */
+diff --git a/arch/arm/include/asm/perf_event.h b/arch/arm/include/asm/perf_event.h
+index 48837e6..c16623b 100644
+--- a/arch/arm/include/asm/perf_event.h
++++ b/arch/arm/include/asm/perf_event.h
+@@ -24,10 +24,6 @@ set_perf_event_pending(void)
+ {
+ }
+ 
+-/* ARM performance counters start from 1 (in the cp15 accesses) so use the
+- * same indexes here for consistency. */
+-#define PERF_EVENT_INDEX_OFFSET 1
+-
+ /* ARM perf PMU IDs for use by internal perf clients. */
+ enum arm_perf_pmu_ids {
+ 	ARM_PERF_PMU_ID_XSCALE1	= 0,
+diff --git a/arch/frv/include/asm/perf_event.h b/arch/frv/include/asm/perf_event.h
+index a69e015..c52ea55 100644
+--- a/arch/frv/include/asm/perf_event.h
++++ b/arch/frv/include/asm/perf_event.h
+@@ -12,6 +12,4 @@
+ #ifndef _ASM_PERF_EVENT_H
+ #define _ASM_PERF_EVENT_H
+ 
+-#define PERF_EVENT_INDEX_OFFSET	0
+-
+ #endif /* _ASM_PERF_EVENT_H */
+diff --git a/arch/powerpc/include/asm/perf_event_server.h b/arch/powerpc/include/asm/perf_event_server.h
+index 8f1df12..1a8093f 100644
+--- a/arch/powerpc/include/asm/perf_event_server.h
++++ b/arch/powerpc/include/asm/perf_event_server.h
+@@ -61,8 +61,6 @@ struct pt_regs;
+ extern unsigned long perf_misc_flags(struct pt_regs *regs);
+ extern unsigned long perf_instruction_pointer(struct pt_regs *regs);
+ 
+-#define PERF_EVENT_INDEX_OFFSET	1
+-
+ /*
+  * Only override the default definitions in include/linux/perf_event.h
+  * if we have hardware PMU support.
+diff --git a/arch/s390/include/asm/perf_event.h b/arch/s390/include/asm/perf_event.h
+index 3840cbe..c5c0fa6 100644
+--- a/arch/s390/include/asm/perf_event.h
++++ b/arch/s390/include/asm/perf_event.h
+@@ -6,5 +6,3 @@
+ 
+ static inline void set_perf_event_pending(void) {}
+ static inline void clear_perf_event_pending(void) {}
+-
+-#define PERF_EVENT_INDEX_OFFSET 0
+diff --git a/arch/sh/include/asm/perf_event.h b/arch/sh/include/asm/perf_event.h
+index 3d0c9f3..19675d0 100644
+--- a/arch/sh/include/asm/perf_event.h
++++ b/arch/sh/include/asm/perf_event.h
+@@ -31,6 +31,4 @@ static inline void set_perf_event_pending(void)
+ 	/* Nothing to see here, move along. */
+ }
+ 
+-#define PERF_EVENT_INDEX_OFFSET	0
+-
+ #endif /* __ASM_SH_PERF_EVENT_H */
+diff --git a/arch/sparc/include/asm/perf_event.h b/arch/sparc/include/asm/perf_event.h
+index 74c4e0c..dd56ba1 100644
+--- a/arch/sparc/include/asm/perf_event.h
++++ b/arch/sparc/include/asm/perf_event.h
+@@ -3,8 +3,6 @@
+ 
+ extern void set_perf_event_pending(void);
+ 
+-#define	PERF_EVENT_INDEX_OFFSET	0
+-
+ #ifdef CONFIG_PERF_EVENTS
+ #include <asm/ptrace.h>
+ 
+diff --git a/arch/x86/include/asm/perf_event.h b/arch/x86/include/asm/perf_event.h
+index 6e742cc..7c31599 100644
+--- a/arch/x86/include/asm/perf_event.h
++++ b/arch/x86/include/asm/perf_event.h
+@@ -127,8 +127,6 @@ union cpuid10_edx {
+ extern void init_hw_perf_events(void);
+ extern void perf_events_lapic_init(void);
+ 
+-#define PERF_EVENT_INDEX_OFFSET			0
+-
+ /*
+  * Abuse bit 3 of the cpu eflags register to indicate proper PEBS IP fixups.
+  * This flag is otherwise unused and ABI specified to be 0, so nobody should
+-- 
+1.5.5.6
+
