@@ -21,6 +21,9 @@ mini: mini.c ../perf.o
 rdpmc: rdpmc.c
 	$(CC) $(CFLAGS) rdpmc.c -o $@
 
+swevent: swevent.c ../perf.o ../$(NAME).o
+	$(CC) $(CFLAGS) ../perf.o ../$(NAME).o swevent.c -o $@
+
 tests: $(TESTS)
 	
 clean:
