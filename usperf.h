@@ -17,9 +17,6 @@
 
 #include <linux/perf_event.h>
 
-
-#define PERFPOINTS_MAX 128
-#define PERFPOINT_EDGES_MAX (PERFPOINTS_MAX * PERFPOINTS_MAX)
 #define SYSTEM_RATIO 10
 
 enum usperf_print_formats {

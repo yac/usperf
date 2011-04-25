@@ -53,11 +53,11 @@ usperf_init(struct usperf_s * usperf, int perfpoints_max, int counter_type)
 		return usperf->cnt.state;
 
 	usperf->perfpoints_max = perfpoints_max + 1;
-	usperf->edges_max = perfpoints_max * perfpoints_max;
+	usperf->edges_max = usperf->perfpoints_max * usperf->perfpoints_max;
 	usperf->points = malloc(sizeof(struct perfpoint_edge_s) * usperf->edges_max);
 
 	edge = usperf->points;
-	for( int i = 0; i < PERFPOINT_EDGES_MAX; i++) {
+	for( int i = 0; i < usperf->perfpoints_max; i++) {
 		edge->user_count = 0;
 		edge->user_sum = 0;
 		edge->system_count = 0;
@@ -83,7 +83,7 @@ const char USPERF_DOT_HEAD[] = "digraph \"usperf\" {\n"
 const char USPERF_DOT_TAIL[] = "}\n";
 const char USPERF_PRINT_MALLOC_FAILED[] = "Memory allocation required for printing failed. What the...";
 
-#define USPERF_DOT_MAX_PENWIDTH 20
+#define USPERF_DOT_MAX_PENWIDTH 15
 
 /**
  * Print usperf statistics to specified stream.
@@ -112,8 +112,8 @@ usperf_print(struct usperf_s * usperf, FILE *stream, int format, const char * (*
 
 		// We need maxima to print something meaningful.
 		edge = usperf->points;
-		for( int i = 0; i < PERFPOINTS_MAX; i++) {
-			for( int j = 0; j < PERFPOINTS_MAX; j++) {
+		for( int i = 0; i < usperf->perfpoints_max; i++) {
+			for( int j = 0; j < usperf->perfpoints_max; j++) {
 				if( edge->user_count > 0 ) {
 					uavg = edge->user_sum / edge->user_count;
 
@@ -140,8 +140,8 @@ usperf_print(struct usperf_s * usperf, FILE *stream, int format, const char * (*
 
 	edge = usperf->points;
 
-	for( int i = 0; i < PERFPOINTS_MAX; i++) {
-		for( int j = 0; j < PERFPOINTS_MAX; j++) {
+	for( int i = 0; i < usperf->perfpoints_max; i++) {
+		for( int j = 0; j < usperf->perfpoints_max; j++) {
 
 			if( edge->user_count > 0 ) {
 
@@ -207,7 +207,7 @@ perfpoint(struct usperf_s * usperf, int index)
 {
 	struct perfpoint_edge_s *edge;
    
-	edge = usperf->points + (index * PERFPOINTS_MAX) + usperf->last_point;
+	edge = usperf->points + (index * usperf->perfpoints_max) + usperf->last_point;
 
 	uint64_t cnt = get_count(usperf);
 	uint32_t ucount = edge->user_count;
