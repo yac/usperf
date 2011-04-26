@@ -31,7 +31,7 @@ main()
 			printf("And one more to be sure: %ld\n", count);
 		}
 		else {
-			printf("No, not event the fu*king read().\n");
+			printf("No, not even the fu*king read().\n");
 		}
 	}
 

@@ -215,7 +215,7 @@ uint64_t pcounter_get(struct pcounter *cnt)
 		}
 		else {
 			// TODO: consider putting normal read here
-			// printf("No HW counter for this perf event!\n");
+			printf("No HW counter for this perf event!\n");
 			return -1;
 		}
 

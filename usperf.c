@@ -78,12 +78,11 @@ usperf_init(struct usperf_s * usperf, int perfpoints_max, int counter_type)
 
 const char USPERF_DOT_HEAD[] = "digraph \"usperf\" {\n"
 "	rankdir=UD\n"
-"	size = \"6,6\"\n"
 "	node [ fontname = \"Helvetica\" ];\n";
 const char USPERF_DOT_TAIL[] = "}\n";
 const char USPERF_PRINT_MALLOC_FAILED[] = "Memory allocation required for printing failed. What the...";
 
-#define USPERF_DOT_MAX_PENWIDTH 15
+#define USPERF_DOT_MAX_PENWIDTH 10
 
 /**
  * Print usperf statistics to specified stream.
@@ -111,10 +110,12 @@ usperf_print(struct usperf_s * usperf, FILE *stream, int format, const char * (*
 		fprintf(stream, USPERF_DOT_HEAD);
 
 		// We need maxima to print something meaningful.
+		// Ignore entry point.
 		edge = usperf->points;
 		for( int i = 0; i < usperf->perfpoints_max; i++) {
-			for( int j = 0; j < usperf->perfpoints_max; j++) {
-				if( edge->user_count > 0 ) {
+			edge++;
+			for( int j = 1; j < usperf->perfpoints_max; j++) {
+				if( edge->user_count > 0) {
 					uavg = edge->user_sum / edge->user_count;
 
 					if( uavg > avg_max) 
@@ -156,6 +157,9 @@ usperf_print(struct usperf_s * usperf, FILE *stream, int format, const char * (*
 					// pen width depends on number of transitions
 					peniswidth = (int)((float)(edge->user_count) / (float)(cnt_max) * USPERF_DOT_MAX_PENWIDTH) + 1;
 					color = (int)(((float)(uavg - avg_min) / (float)(avg_max - avg_min)) * 254) + 1;
+					if (color > 255)
+						color = 255;	
+
 					if (point_name_fnc == NULL) {
 						fprintf(stream, "	\"%d\" -> \"%d\"", j, i);
 					}
@@ -163,7 +167,7 @@ usperf_print(struct usperf_s * usperf, FILE *stream, int format, const char * (*
 						fprintf(stream, "	\"%s\" -> \"%s\"", point_name_fnc(j), point_name_fnc(i));
 					}
 
-					fprintf(stream, "[ label = \"%ld (x%d = %ld)\", penwidth = %d, color=\"#%02X0000\" ];\n",
+					fprintf(stream, "[ label = \" %ld x %d\\n = %ld\", penwidth = %d, color=\"#%02X0000\" ];\n",
 							uavg, edge->user_count, edge->user_sum, peniswidth, color
 							);
 				}

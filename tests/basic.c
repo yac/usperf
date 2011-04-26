@@ -74,7 +74,7 @@ int main()
 	 * @li PERF_COUNT_HW_CPU_CYCLES
 	 * @li PERF_COUNT_HW_INSTRUCTION
 	 */
-	int c = USPERF_INIT(&usperf, 128, PERF_COUNT_HW_INSTRUCTIONS);
+	int c = USPERF_INIT(&usperf, 10, PERF_COUNT_HW_INSTRUCTIONS);
 
 	if( c != 0 ) {
 		printf("usperf init failed: %d\n", c);
