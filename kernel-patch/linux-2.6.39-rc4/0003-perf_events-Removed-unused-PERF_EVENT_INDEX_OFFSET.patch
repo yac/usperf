@@ -1,6 +1,6 @@
-From cfb0701242cfbff0ee7c63d5cc01b7462f65673f Mon Sep 17 00:00:00 2001
+From c198e33a151e7e541ef717920284510c3c20a0a9 Mon Sep 17 00:00:00 2001
 From: Jakub Ruzicka <jruzicka@linuxbox.cz>
-Date: Sun, 24 Apr 2011 14:30:11 +0200
+Date: Wed, 27 Apr 2011 17:48:21 +0200
 Subject: [PATCH 3/3] perf_events: Removed unused PERF_EVENT_INDEX_OFFSET
 
 ---

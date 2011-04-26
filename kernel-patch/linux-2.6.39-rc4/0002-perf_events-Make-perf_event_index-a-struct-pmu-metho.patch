@@ -1,29 +1,26 @@
-From d66766e628630f65fa0999b0ea558abcb5ffaeaf Mon Sep 17 00:00:00 2001
+From 43111784390715751e2a64ac305b495221f86d2f Mon Sep 17 00:00:00 2001
 From: Jakub Ruzicka <jruzicka@linuxbox.cz>
 Date: Sun, 24 Apr 2011 13:29:30 +0200
 Subject: [PATCH 2/3] perf_events: Make perf_event_index() a struct pmu method
 
 ---
- arch/arm/kernel/perf_event.c     |   15 +++++++++++++++
- arch/powerpc/kernel/perf_event.c |   19 +++++++++++++++++++
- arch/x86/kernel/cpu/perf_event.c |   21 +++++++++++++++++++++
+ arch/arm/kernel/perf_event.c     |   12 ++++++++++++
+ arch/powerpc/kernel/perf_event.c |   16 ++++++++++++++++
+ arch/x86/kernel/cpu/perf_event.c |   18 ++++++++++++++++++
  include/linux/perf_event.h       |    6 ++++++
  kernel/perf_event.c              |   24 ++++++++----------------
- 5 files changed, 69 insertions(+), 16 deletions(-)
+ 5 files changed, 60 insertions(+), 16 deletions(-)
 
 diff --git a/arch/arm/kernel/perf_event.c b/arch/arm/kernel/perf_event.c
-index 979da39..145854e 100644
+index 979da39..32a6963 100644
 --- a/arch/arm/kernel/perf_event.c
 +++ b/arch/arm/kernel/perf_event.c
-@@ -612,6 +612,20 @@ static void armpmu_disable(struct pmu *pmu)
+@@ -612,6 +612,17 @@ static void armpmu_disable(struct pmu *pmu)
  		armpmu->stop();
  }
  
 +static int armpmu_index(struct perf_event *event)
 +{
-+	if (event->pmu->type != PERF_TYPE_HARDWARE)
-+		return 0;
-+
 +	if (event->hw.state & PERF_HES_STOPPED)
 +		return 0;
 +
@@ -36,7 +33,7 @@ index 979da39..145854e 100644
  static struct pmu pmu = {
  	.pmu_enable	= armpmu_enable,
  	.pmu_disable	= armpmu_disable,
-@@ -621,6 +635,7 @@ static struct pmu pmu = {
+@@ -621,6 +632,7 @@ static struct pmu pmu = {
  	.start		= armpmu_start,
  	.stop		= armpmu_stop,
  	.read		= armpmu_read,
@@ -45,10 +42,10 @@ index 979da39..145854e 100644
  
  /* Include the PMU-specific implementations. */
 diff --git a/arch/powerpc/kernel/perf_event.c b/arch/powerpc/kernel/perf_event.c
-index 822f630..9063acc 100644
+index 822f630..9093158 100644
 --- a/arch/powerpc/kernel/perf_event.c
 +++ b/arch/powerpc/kernel/perf_event.c
-@@ -910,6 +910,24 @@ static void power_pmu_stop(struct perf_event *event, int ef_flags)
+@@ -910,6 +910,21 @@ static void power_pmu_stop(struct perf_event *event, int ef_flags)
  }
  
  /*
@@ -57,9 +54,6 @@ index 822f630..9063acc 100644
 + */
 +static int power_pmu_index(struct perf_event *event)
 +{
-+	if (event->pmu->type != PERF_TYPE_HARDWARE)
-+		return 0;
-+
 +	if (event->hw.state & PERF_HES_STOPPED)
 +		return 0;
 +
@@ -73,7 +67,7 @@ index 822f630..9063acc 100644
   * Start group events scheduling transaction
   * Set the flag to make pmu::enable() not perform the
   * schedulability test, it will be performed at commit time
-@@ -1199,6 +1217,7 @@ struct pmu power_pmu = {
+@@ -1199,6 +1214,7 @@ struct pmu power_pmu = {
  	.start_txn	= power_pmu_start_txn,
  	.cancel_txn	= power_pmu_cancel_txn,
  	.commit_txn	= power_pmu_commit_txn,
@@ -82,19 +76,16 @@ index 822f630..9063acc 100644
  
  /*
 diff --git a/arch/x86/kernel/cpu/perf_event.c b/arch/x86/kernel/cpu/perf_event.c
-index eed3673a..611b4fd 100644
+index eed3673a..5857f81 100644
 --- a/arch/x86/kernel/cpu/perf_event.c
 +++ b/arch/x86/kernel/cpu/perf_event.c
-@@ -1165,6 +1165,25 @@ static void x86_pmu_start(struct perf_event *event, int flags)
+@@ -1165,6 +1165,22 @@ static void x86_pmu_start(struct perf_event *event, int flags)
  	perf_event_update_userpage(event);
  }
  
 +static int x86_pmu_index(struct perf_event *event)
 +{
 +	int index;
-+
-+	if (event->pmu->type != PERF_TYPE_HARDWARE)
-+		return 0;
 +
 +	if (event->hw.state & PERF_HES_STOPPED)
 +		return 0;
@@ -111,7 +102,7 @@ index eed3673a..611b4fd 100644
  void perf_event_print_debug(void)
  {
  	u64 ctrl, status, overflow, pmc_ctrl, pmc_count, prev_left, fixed;
-@@ -1748,6 +1767,8 @@ static struct pmu pmu = {
+@@ -1748,6 +1764,8 @@ static struct pmu pmu = {
  	.start_txn	= x86_pmu_start_txn,
  	.cancel_txn	= x86_pmu_cancel_txn,
  	.commit_txn	= x86_pmu_commit_txn,
