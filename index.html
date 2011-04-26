@@ -49,17 +49,122 @@
       userspace perf counters
     </div>
 
-    <p>see README</p><h2>Dependencies</h2>
-<p>see README</p>
-<h2>Install</h2>
-<p>see README</p>
-<h2>License</h2>
-<p>GPL 3</p>
-<h2>Authors</h2>
-<p>Jakub Ruzicka (jruzicka@linuxbox.cz)</p>
-<h2>Contact</h2>
-<p>Jakub Ruzicka (jruzicka@linuxbox.cz)</p>
+    <h2>Dependencies</h2>
+	<pre>
+    
+                                  ____
+      __  ___________  ___  _____/ __/
+     / / / / ___/ __ \/ _ \/ ___/ /_    userspace
+    / /_/ (__  ) /_/ /  __/ /  / __/   performance
+    \__,_/____/ .___/\___/_/  /_/     counters
+             /_/
 
+
+WHAT THE...
+	usperf's goal is to make it possible to read the hardware performance
+	counters used by the perf events linux subsystem from userspace using
+	RDPMC instruction avoiding system calls which are too expensive for
+	certain tasks like real time performance monitoring, which is exactly what
+	libusperf is for.
+
+
+STATUS
+	Linux kernel needs to be patched, see KERNEL PATCH.
+
+	libusperf userspace library is in alpha stage and ready for testing. 
+
+
+HOW IT WORKS
+	1) create hardware perf event (counter) through system call 
+	2) mmap the perf event (file descriptor) to get info about the event
+	3) continually read the HW counter associated with perf event from
+	   userspace using RDPMC
+
+
+THE PROBLEM
+	Context/CPU switches are not yet compensated! This is the main problem
+	that needs to be solved.
+
+
+KERNEL PATCH
+	Linux kernel (as of 2.6.39) needs to be patched to:
+		- Allow RDPMC instrution from userspace. This is done by setting
+		  CR4.PCE CPU flag on x86 which is unset by default allowing RDPMC to
+		  be called only from ring 0
+		- Get the HW counter index for RPDMC. That is achieved by making
+		  perf_event_index() a struct pmu (== arch specific) function. 
+	
+	Patches to do so are available in kernel-patch/ directory. Patches are
+	small but tested to work on x86 only. If you have a powerpc/arm machine
+	you'd like to use, please DO let me know!
+
+
+PREREQUISITIES/INSTALLATION
+	You need a machine with PMC, which are present on most of new intel/AMD
+	(power/arm too, of course) CPUs. Then you need a linux kernel with perf
+	events subsystem and patches applied (see KERNEL PATCH above). 
+
+	Even though you can copy and use {us,}perf.[ch], using library is
+	recommended.  Use either the libusperf RPM package or run `make` and copy
+	libusperf.so to library dir (and optionally usperf.h to include dir).  
+
+	To check if everything is working, compile tests `make tests` and run
+	`./tests_run.sh` in ./tests/ directory to run all usperf tests on all CPUs.
+
+
+USAGE
+	USPERF_* macros are just macros wrapped around usperf_* functions with the
+	same parameters that are only enabled when USPERF symbol is defined.
+	Additionaly USPERF_*_S macros allow you to ommit passing struct usperf_s as
+	the 1st argument and instead use predefined one. This is, as you certainly
+	guessed, not a good idea with more than one thread. Basically, your
+	measured code will look like this:
+
+	#include &lt;usperf.h&gt;
+	...
+	...
+	struct usperf_s usperf;
+	USPERF_INIT(&amp;usperf, N_POINTS, COUNTER_TYPE);
+	...
+	PERFPOINT(&amp;usperf, 1);
+	...
+	PERFPOINT(&amp;usperf, 2);
+	...
+	...
+	...
+	PERFPOINT($usperf, N - 1)
+
+	USPERF_PRINT(...)
+	USPERF_CLOSE(&amp;usperf)
+
+	Make sure libusperf.so is in place and compile with -lusperf and -DUSPERF.
+	Without USPERF defined, all the USPERF_* macros shall be disabled, which
+	allow you to efficiently enable and disable usperf at compile time.
+	Disabling it may cause safe-to-ignore "unused..." compiler warnings.
+
+
+PRETTY GRAPHICAL OUTPUT
+	Indeed! Use USPERF_PRINT() with USPERF_PRINT_DOT format and file stream.
+	Output will be generated in dot format. dot is a nice little directed
+	graph plotting app from graphviz package and can be:
+
+		viewed with imagemagick: dot -T png usperf.dot | display
+		          saved to file: dot -T png -o pretty_graph.png usperf.dot
+	
+	Line width is proportional to the number of runs through the edge, color
+	represents how long it took on average.
+
+
+SEE ALSO
+	- usperf.h
+	- tests/basic.c
+	- Makefile
+	- HTML Doxygen documentation at doc/html/index.html (after `make doc`)
+
+
+CONTACT
+	Jakub Ruzicka: jruzicka (AT) linuxbox.cz
+</pre>
 
     <h2>Download</h2>
     <p>
