@@ -13,6 +13,8 @@ WHAT THE...
 	RDPMC instruction avoiding system calls which are too expensive for
 	certain tasks like real time performance monitoring, which is exactly what
 	libusperf is for.
+	
+	usperf is developed at LinuxBox.cz.
 
 
 STATUS
